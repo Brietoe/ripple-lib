@@ -45,7 +45,7 @@ import {
 } from '../common/hashes'
 import RangeSet from '../common/rangeset'
 import * as schemaValidator from '../common/schema-validator'
-import {getServerInfo, getFee} from '../common/serverinfo'
+import {getServerInfo, getFee} from '../common/serverInfo'
 import {
   AccountObjectsRequest,
   AccountObjectsResponse,
@@ -147,15 +147,15 @@ class Client extends EventEmitter {
   public static formatBidsAndAsks = formatBidsAndAsks
 
   // these are exposed only for use by unit tests; they are not part of the client.
-  private static readonly PRIVATE = {
+  public static readonly PRIVATE = {
     validate,
     RangeSet,
     ledgerUtils,
     schemaValidator
   }
 
-  private readonly feeCushion: number
-  private readonly maxFeeXRP: string
+  public readonly feeCushion: number
+  public readonly maxFeeXRP: string
 
   // New in > 0.21.0
   // non-validated ledger versions are allowed, and passed to rippled as-is.

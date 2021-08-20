@@ -1,63 +1,71 @@
-import {EventEmitter} from 'events'
+import EventEmitter from 'events'
 
-// Define the global WebSocket class found on the native browser
-declare class WebSocket {
-  onclose?: Function
-  onopen?: Function
-  onerror?: Function
-  onmessage?: Function
-  readyState: number
-  constructor(url: string)
-  close()
-  send(message: string)
-}
+import WebSocket from 'ws'
 
 /**
  * Provides `EventEmitter` interface for native browser `WebSocket`,
  * same, as `ws` package provides.
  */
 class WSWrapper extends EventEmitter {
-  private readonly _ws: WebSocket
-  static CONNECTING = 0
-  static OPEN = 1
-  static CLOSING = 2
-  static CLOSED = 3
+  public static readonly CONNECTING = 0
+  public static readonly OPEN = 1
+  public static readonly CLOSING = 2
+  public static readonly CLOSED = 3
+  private readonly ws: WebSocket
 
-  constructor(url, _protocols: any, _websocketOptions: any) {
+  /**
+   * Construct a WSWrapper.
+   *
+   * @param url - URL to connect to.
+   */
+  public constructor(url: string) {
     super()
     this.setMaxListeners(Infinity)
 
-    this._ws = new WebSocket(url)
+    this.ws = new WebSocket(url)
 
-    this._ws.onclose = () => {
+    this.ws.onclose = (): void => {
       this.emit('close')
     }
 
-    this._ws.onopen = () => {
+    this.ws.onopen = (): void => {
       this.emit('open')
     }
 
-    this._ws.onerror = (error) => {
+    this.ws.onerror = (error): void => {
       this.emit('error', error)
     }
 
-    this._ws.onmessage = (message) => {
+    this.ws.onmessage = (message): void => {
       this.emit('message', message.data)
     }
   }
 
-  close() {
+  /**
+   * Close the underlying WebSocket Connection.
+   */
+  public close(): void {
     if (this.readyState === 1) {
-      this._ws.close()
+      this.ws.close()
     }
   }
 
-  send(message) {
-    this._ws.send(message)
+  /**
+   * Send a message with WebSocket.
+   *
+   * @param message - Message to send.
+   */
+  public send(message: string): void {
+    this.ws.send(message)
   }
 
-  get readyState() {
-    return this._ws.readyState
+  /**
+   * Get readyState of underlying WebSocket.
+   *
+   * @returns State of WebSocket Connection.
+   */
+  public get readyState(): number {
+    return this.ws.readyState
   }
 }
 

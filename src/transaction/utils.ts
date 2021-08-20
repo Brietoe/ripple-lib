@@ -1,13 +1,13 @@
 import BigNumber from 'bignumber.js'
 import {xAddressToClassicAddress, isValidXAddress} from 'ripple-address-codec'
 
-import {Client} from '..'
+import type {Client} from '..'
 import * as common from '../common'
 import {toRippledAmount} from '../common'
 import {ValidationError} from '../common/errors'
 import {Memo} from '../common/types/objects'
 
-import {Instructions, Prepare, TransactionJSON} from './types'
+import type {Instructions, Prepare, TransactionJSON} from './types'
 
 const txFlags = common.txFlags
 const TRANSACTION_TYPES_WITH_DESTINATION_TAG_FIELD = [

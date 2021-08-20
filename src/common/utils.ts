@@ -6,6 +6,11 @@ import {deriveKeypair} from 'ripple-keypairs'
 import {ValidationError} from './errors'
 import {RippledAmount} from './types/objects'
 
+/**
+ *
+ * @param secret
+ * @returns
+ */
 function isValidSecret(secret: string): boolean {
   try {
     deriveKeypair(secret)
@@ -15,6 +20,11 @@ function isValidSecret(secret: string): boolean {
   }
 }
 
+/**
+ *
+ * @param drops
+ * @returns
+ */
 function dropsToXrp(drops: BigNumber.Value): string {
   if (typeof drops === 'string') {
     if (!drops.match(/^-?[0-9]*\.?[0-9]*$/)) {
@@ -56,6 +66,11 @@ function dropsToXrp(drops: BigNumber.Value): string {
   return new BigNumber(drops).dividedBy(1000000.0).toString(10)
 }
 
+/**
+ *
+ * @param xrp
+ * @returns
+ */
 function xrpToDrops(xrp: BigNumber.Value): string {
   if (typeof xrp === 'string') {
     if (!xrp.match(/^-?[0-9]*\.?[0-9]*$/)) {

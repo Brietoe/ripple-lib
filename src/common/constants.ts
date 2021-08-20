@@ -1,4 +1,4 @@
-import {txFlagIndices} from './txflags'
+import {txFlagIndices} from './txFlags'
 
 // Ordering from https://developers.ripple.com/accountroot.html
 const accountRootFlags = {

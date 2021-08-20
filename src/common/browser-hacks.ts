@@ -30,8 +30,8 @@ function getConstructorName(object: Record<string, any>): string {
     return object.constructor.name
   }
 
-  const CONSTRUCTOR_REGEX = /^class\s([^\s]*)/
-  const FUNCTION_REGEX = /^function\s+([^(]*)/
+  const CONSTRUCTOR_REGEX = /^class\s([^\s]*)/u
+  const FUNCTION_REGEX = /^function\s+([^(]*)/u
   // try to guess it on legacy browsers (ie)
   const constructorString = object.constructor.toString()
   const functionConstructor = FUNCTION_REGEX.exec(constructorString)

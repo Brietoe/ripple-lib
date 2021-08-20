@@ -2,10 +2,17 @@ import {xAddressToClassicAddress, isValidXAddress} from 'ripple-address-codec'
 
 import * as constants from './constants'
 import * as errors from './errors'
-import * as serverInfo from './serverinfo'
+import * as serverInfo from './serverInfo'
 import * as validate from './validate'
 
-export function ensureClassicAddress(account: string): string {
+/**
+ * Ensure account is a classic address.
+ *
+ * @param account - Account to ensure is a classic address.
+ * @returns A classic Address.
+ * @throws When X-Address has a tag.
+ */
+function ensureClassicAddress(account: string): string {
   if (isValidXAddress(account)) {
     const {classicAddress, tag} = xAddressToClassicAddress(account)
 
@@ -24,7 +31,7 @@ export function ensureClassicAddress(account: string): string {
   return account
 }
 
-export {constants, errors, validate, serverInfo}
+export {ensureClassicAddress, constants, errors, validate, serverInfo}
 export {
   dropsToXrp,
   xrpToDrops,
@@ -35,4 +42,4 @@ export {
   rippleTimeToISO8601
 } from './utils'
 export {Connection} from './connection'
-export {txFlags} from './txflags'
+export {txFlags} from './txFlags'

@@ -13,14 +13,15 @@ class RippleError extends Error {
    * Construct a RippleError.
    *
    * @param message - Message accompanying the error.
-   * @param data - Any data pertainent to the error.
+   * @param data - Any data relevant to the error.
    */
-  public constructor(message = '') {
+  public constructor(message = '', data: any = {}) {
     super(message)
 
     this.name = browserHacks.getConstructorName(this)
     this.message = message
     this.data = data
+
     if (Error.captureStackTrace) {
       Error.captureStackTrace(this, this.constructor)
     }

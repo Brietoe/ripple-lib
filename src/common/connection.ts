@@ -4,7 +4,7 @@ import {parse as parseUrl} from 'url'
 import * as _ from 'lodash'
 import WebSocket from 'ws'
 
-import {ExponentialBackoff} from './backoff'
+import ExponentialBackoff from './backoff'
 import {
   RippledError,
   DisconnectedError,

@@ -1,4 +1,4 @@
-import assert from 'assert-diff'
+import {expect} from 'chai'
 
 import {getFaucetUrl, FaucetNetwork} from '../src/wallet/wallet-generation'
 
@@ -12,25 +12,25 @@ describe('Get Faucet URL', function () {
     const expectedFaucet = FaucetNetwork.Devnet
     this.client.connection._url = FaucetNetwork.Devnet
 
-    assert.strictEqual(getFaucetUrl(this.client), expectedFaucet)
+    expect(getFaucetUrl(this.client)).to.equal(expectedFaucet)
   })
 
   it('returns the Testnet URL', function () {
     const expectedFaucet = FaucetNetwork.Testnet
     this.client.connection._url = FaucetNetwork.Testnet
 
-    assert.strictEqual(getFaucetUrl(this.client), expectedFaucet)
+    expect(getFaucetUrl(this.client)).to.equal(expectedFaucet)
   })
 
   it('returns the Testnet URL with the XRPL Labs server', function () {
     const expectedFaucet = FaucetNetwork.Testnet
     this.client.connection._url = 'wss://testnet.xrpl-labs.com'
 
-    assert.strictEqual(getFaucetUrl(this.client), expectedFaucet)
+    expect(getFaucetUrl(this.client)).to.equal(expectedFaucet)
   })
 
   it('returns undefined if not a Testnet or Devnet server URL', function () {
     // Info: setupClient.setup creates a connection to 'localhost'
-    assert.strictEqual(getFaucetUrl(this.client), undefined)
+    expect(getFaucetUrl(this.client)).to.equal(undefined)
   })
 })

@@ -1,10 +1,11 @@
-import assert from 'assert-diff'
+import {expect} from 'chai'
 
 import ECDSA from '../../../src/common/ecdsa'
 import Wallet from '../../../src/Wallet'
 import {TestSuite} from '../../utils'
 
-const entropy: number[] = new Array(16).fill(0)
+const ENTROPY_SIZE = 16
+const entropy: number[] = new Array<number>(ENTROPY_SIZE).fill(0)
 const publicKey =
   '0390A196799EE412284A5D80BF78C3E84CBB80E1437A0AECD9ADF94D7FEAAFA284'
 const privateKey =
@@ -19,17 +20,17 @@ const privateKeyED25519 =
  * - Check out the "TestSuite" type for documentation on the interface.
  * - Check out "test/api/index.ts" for more information about the test runner.
  */
-export default <TestSuite>{
-  'Wallet.fromEntropy with entropy only': async (api) => {
+const tests: TestSuite = {
+  'Wallet.fromEntropy with entropy only': async (_api) => {
     // WHEN deriving a wallet from an entropy
     const wallet = Wallet.fromEntropy(entropy)
 
     // THEN we get a wallet with a keypair (publicKey/privateKey)
-    assert.equal(wallet.publicKey, publicKeyED25519)
-    assert.equal(wallet.privateKey, privateKeyED25519)
+    expect(wallet.publicKey).to.equal(publicKeyED25519)
+    expect(wallet.privateKey).to.equal(privateKeyED25519)
   },
 
-  'Wallet.fromEntropy with algorithm ecdsa-secp256k1': async (api) => {
+  'Wallet.fromEntropy with algorithm ecdsa-secp256k1': async (_api) => {
     // GIVEN an entropy using ecdsa-secp256k1
     const algorithm = ECDSA.secp256k1
 
@@ -37,11 +38,11 @@ export default <TestSuite>{
     const wallet = Wallet.fromEntropy(entropy, algorithm)
 
     // THEN we get a wallet with a keypair (publicKey/privateKey)
-    assert.equal(wallet.publicKey, publicKey)
-    assert.equal(wallet.privateKey, privateKey)
+    expect(wallet.publicKey).to.equal(publicKey)
+    expect(wallet.privateKey).to.equal(privateKey)
   },
 
-  'Wallet.fromEntropy with algorithm ed25519': async (api) => {
+  'Wallet.fromEntropy with algorithm ed25519': async (_api) => {
     // GIVEN an entropy using ed25519
     const algorithm = ECDSA.ed25519
 
@@ -49,7 +50,9 @@ export default <TestSuite>{
     const wallet = Wallet.fromEntropy(entropy, algorithm)
 
     // THEN we get a wallet with a keypair (publicKey/privateKey)
-    assert.equal(wallet.publicKey, publicKeyED25519)
-    assert.equal(wallet.privateKey, privateKeyED25519)
+    expect(wallet.publicKey).to.equal(publicKeyED25519)
+    expect(wallet.privateKey).to.equal(privateKeyED25519)
   }
 }
+
+export default tests

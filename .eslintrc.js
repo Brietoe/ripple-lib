@@ -24,7 +24,7 @@ module.exports = {
   },
 
   plugins: [],
-  extends: ['@xrplf/eslint-config/base'],
+  extends: ['@xrplf/eslint-config/base', 'plugin:mocha/recommended'],
   rules: {
     // Certain rippled APIs require snake_case naming
     '@typescript-eslint/naming-convention': [

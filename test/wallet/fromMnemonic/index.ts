@@ -1,4 +1,4 @@
-import assert from 'assert-diff'
+import {expect} from 'chai'
 
 import Wallet from '../../../src/Wallet'
 import {TestSuite} from '../../utils'
@@ -15,18 +15,18 @@ const privateKey =
  * - Check out the "TestSuite" type for documentation on the interface.
  * - Check out "test/api/index.ts" for more information about the test runner.
  */
-export default <TestSuite>{
-  'Wallet.fromMnemonic using default derivation path': async (api) => {
+const tests: TestSuite = {
+  'Wallet.fromMnemonic using default derivation path': async (_api) => {
     // GIVEN no derivation path
     // WHEN deriving a wallet from a mnemonic without a derivation path
     const wallet = Wallet.fromMnemonic(mnemonic)
 
     // THEN we get a wallet with a keypair (publicKey/privateKey)
-    assert.equal(wallet.publicKey, publicKey)
-    assert.equal(wallet.privateKey, privateKey)
+    expect(wallet.publicKey).to.equal(publicKey)
+    expect(wallet.privateKey).to.equal(privateKey)
   },
 
-  'Wallet.fromMnemonic using an input derivation path': async (api) => {
+  'Wallet.fromMnemonic using an input derivation path': async (_api) => {
     // GIVEN a derivation path
     const derivationPath = "m/44'/144'/0'/0/0"
 
@@ -34,7 +34,9 @@ export default <TestSuite>{
     const wallet = Wallet.fromMnemonic(mnemonic, derivationPath)
 
     // THEN we get a wallet with a keypair (publicKey/privateKey)
-    assert.equal(wallet.publicKey, publicKey)
-    assert.equal(wallet.privateKey, privateKey)
+    expect(wallet.publicKey).to.equal(publicKey)
+    expect(wallet.privateKey).to.equal(privateKey)
   }
 }
+
+export default tests

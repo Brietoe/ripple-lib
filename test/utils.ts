@@ -2,22 +2,14 @@ import fs from 'fs'
 import net from 'net'
 import path from 'path'
 
-import assert from 'assert-diff'
-import _ from 'lodash'
-
-import {Client} from 'xrpl-local'
-
-const {schemaValidator} = Client._PRIVATE
+import {Client} from '../src'
 
 /**
  * The test function. It takes a Client object and then some other data to
  * test (currently: an address). May be called multiple times with different
  * arguments, to test different types of data.
  */
-export type TestFn = (
-  client: Client,
-  address: string
-) => void | PromiseLike<void>
+type TestFn = (client: Client, address: string) => void | PromiseLike<void>
 
 /**
  * A suite of tests to run. Maps the test name to the test function.
@@ -36,81 +28,22 @@ interface LoadedTestSuite {
   name: string
   tests: Array<[string, TestFn]>
   config: {
-    /** Set to true to skip re-running tests with an X-address. */
     skipXAddress?: boolean
   }
 }
 
 /**
- * Check the response against the expected result. Optionally validate
- * that response against a given schema as well.
+ * Finds a free Port on the system.
  *
- * @param response
- * @param expected
- * @param schemaName
+ * @returns An error if port is not free, else a free port.
  */
-export function assertResultMatch(
-  response: any,
-  expected: any,
-  schemaName?: string
-) {
-  if (expected.txJSON) {
-    assert(response.txJSON)
-    assert.deepEqual(
-      JSON.parse(response.txJSON),
-      JSON.parse(expected.txJSON),
-      'checkResult: txJSON must match'
-    )
-  }
-  if (expected.tx_json) {
-    assert(response.tx_json)
-    assert.deepEqual(
-      response.tx_json,
-      expected.tx_json,
-      'checkResult: tx_json must match'
-    )
-  }
-  assert.deepEqual(
-    _.omit(response, ['txJSON', 'tx_json']),
-    _.omit(expected, ['txJSON', 'tx_json'])
-  )
-  if (schemaName) {
-    schemaValidator.schemaValidate(schemaName, response)
-  }
-}
-
-/**
- * Check that the promise rejects with an expected error.
- *
- * @param promise
- * @param instanceOf
- * @param message
- */
-export async function assertRejects(
-  promise: PromiseLike<any>,
-  instanceOf: any,
-  message?: string | RegExp
-) {
-  try {
-    await promise
-    assert(false, 'Expected an error to be thrown')
-  } catch (error) {
-    assert(error instanceof instanceOf, error.message)
-    if (typeof message === 'string') {
-      assert.strictEqual(error.message, message)
-    } else if (message instanceof RegExp) {
-      assert(message.test(error.message))
-    }
-  }
-}
-
-// using a free port instead of a constant port enables parallelization
-export function getFreePort() {
+export async function getFreePort(): Promise<Error | number> {
   return new Promise((resolve, reject) => {
     const server = net.createServer()
-    let port
+    let port: number | undefined
     server.on('listening', function () {
-      port = (server.address() as any).port
+      const addr = server.address()
+      port = typeof addr === 'string' ? port : addr.port
       server.close()
     })
     server.on('close', function () {
@@ -123,7 +56,7 @@ export function getFreePort() {
   })
 }
 
-export function getAllPublicMethods(client: Client) {
+export function getAllPublicMethods(client: Client): string[] {
   return Array.from(
     new Set([
       ...Object.getOwnPropertyNames(client),
@@ -133,20 +66,21 @@ export function getAllPublicMethods(client: Client) {
 }
 
 export function loadTestSuites(): LoadedTestSuite[] {
-  const allTests = fs.readdirSync(path.join(__dirname, 'client'), {
+  const allTests: string[] = fs.readdirSync(path.join(__dirname, 'client'), {
     encoding: 'utf8'
   })
   return allTests
-    .map((methodName) => {
+    .map((methodName: string): LoadedTestSuite => {
       if (methodName.startsWith('.DS_Store')) {
         return null
       }
-      const testSuite = require(`./client/${methodName}`)
-      return {
+      const testSuite: TestSuite = require(`./client/${methodName}`)
+      const loaded: LoadedTestSuite = {
         name: methodName,
-        config: testSuite.config || {},
-        tests: Object.entries(testSuite.default || {})
-      } as LoadedTestSuite
+        config: testSuite.config,
+        tests: Object.entries(testSuite.default)
+      }
+      return loaded
     })
     .filter(Boolean)
 }
@@ -156,7 +90,8 @@ export function loadTestSuites(): LoadedTestSuite[] {
  * care about the response and plan to teardown the test before the response
  * has come back.
  *
- * @param error
+ * @param error - Error from the WebSocket Disconnect.
+ * @throws Error if Error is not "websocket was closed".
  */
 export function ignoreWebSocketDisconnect(error: Error): void {
   if (error.message === 'websocket was closed') {

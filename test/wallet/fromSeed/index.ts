@@ -1,4 +1,4 @@
-import assert from 'assert-diff'
+import {expect} from 'chai'
 
 import ECDSA from '../../../src/common/ecdsa'
 import Wallet from '../../../src/Wallet'
@@ -15,17 +15,17 @@ const privateKey =
  * - Check out the "TestSuite" type for documentation on the interface.
  * - Check out "test/api/index.ts" for more information about the test runner.
  */
-export default <TestSuite>{
-  'Wallet.fromSeed with empty options object': async (api) => {
+const tests: TestSuite = {
+  'Wallet.fromSeed with empty options object': async (_api) => {
     // WHEN deriving a wallet from a seed
     const wallet = Wallet.fromSeed(seed)
 
     // THEN we get a wallet with a keypair (publicKey/privateKey)
-    assert.equal(wallet.publicKey, publicKey)
-    assert.equal(wallet.privateKey, privateKey)
+    expect(wallet.publicKey).to.equal(publicKey)
+    expect(wallet.privateKey).to.equal(privateKey)
   },
 
-  'Wallet.fromSeed with algorithm ecdsa-secp256k1': async (api) => {
+  'Wallet.fromSeed with algorithm ecdsa-secp256k1': async (_api) => {
     // GIVEN we want to use ecdsa-secp256k1
     const algorithm = ECDSA.secp256k1
 
@@ -33,11 +33,11 @@ export default <TestSuite>{
     const wallet = Wallet.fromSeed(seed, algorithm)
 
     // THEN we get a wallet with a keypair (publicKey/privateKey)
-    assert.equal(wallet.publicKey, publicKey)
-    assert.equal(wallet.privateKey, privateKey)
+    expect(wallet.publicKey).to.equal(publicKey)
+    expect(wallet.privateKey).to.equal(privateKey)
   },
 
-  'Wallet.fromSeed with algorithm ed25519': async (api) => {
+  'Wallet.fromSeed with algorithm ed25519': async (_api) => {
     // GIVEN we want to use ed25519
     const algorithm = ECDSA.ed25519
 
@@ -45,7 +45,9 @@ export default <TestSuite>{
     const wallet = Wallet.fromSeed(seed, algorithm)
 
     // THEN we get a wallet with a keypair (publicKey/privateKey)
-    assert.equal(wallet.publicKey, publicKey)
-    assert.equal(wallet.privateKey, privateKey)
+    expect(wallet.publicKey).to.equal(publicKey)
+    expect(wallet.privateKey).to.equal(privateKey)
   }
 }
+
+export default tests

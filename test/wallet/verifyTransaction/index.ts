@@ -18,7 +18,7 @@ const prepared = {
  * - Check out the "TestSuite" type for documentation on the interface.
  * - Check out "test/api/index.ts" for more information about the test runner.
  */
-export default <TestSuite>{
+const tests: TestSuite = {
   'verify transaction offline when a signed transaction is valid': async (
     _api
   ) => {
@@ -53,3 +53,5 @@ export default <TestSuite>{
     expect(isVerified).to.equal(false)
   }
 }
+
+export default tests
