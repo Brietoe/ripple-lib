@@ -1,13 +1,14 @@
-import parseFields from './parse/fields'
-import {validate, constants, ensureClassicAddress} from '../common'
-import {FormattedSettings} from '../common/types/objects'
-import {AccountInfoResponse} from '../common/types/commands'
 import {Client} from '..'
+import {validate, constants, ensureClassicAddress} from '../common'
 import {Settings} from '../common/constants'
+import {AccountInfoResponse} from '../common/types/commands'
+import {FormattedSettings} from '../common/types/objects'
+
+import parseFields from './parse/fields'
 
 const AccountFlags = constants.AccountFlags
 
-export type SettingsOptions = {
+export interface SettingsOptions {
   ledgerVersion?: number | 'validated' | 'closed' | 'current'
 }
 
@@ -19,10 +20,8 @@ export function parseAccountFlags(
   for (const flagName in AccountFlags) {
     if (value & AccountFlags[flagName]) {
       settings[flagName] = true
-    } else {
-      if (!options.excludeFalse) {
-        settings[flagName] = false
-      }
+    } else if (!options.excludeFalse) {
+      settings[flagName] = false
     }
   }
   return settings
@@ -32,7 +31,7 @@ function formatSettings(response: AccountInfoResponse) {
   const data = response.account_data
   const parsedFlags = parseAccountFlags(data.Flags, {excludeFalse: true})
   const parsedFields = parseFields(data)
-  return Object.assign({}, parsedFlags, parsedFields)
+  return {...parsedFlags, ...parsedFields}
 }
 
 export async function getSettings(

@@ -1,4 +1,5 @@
 import assert from 'assert-diff'
+
 import {TestSuite} from '../../utils'
 
 /**
@@ -27,7 +28,10 @@ export default <TestSuite>{
     assert.strictEqual(fee, '2')
   },
 
-  'getFee - high load_factor with custom maxFeeXRP': async (client, address) => {
+  'getFee - high load_factor with custom maxFeeXRP': async (
+    client,
+    address
+  ) => {
     // Ensure that overriding with high maxFeeXRP of '51540' causes no errors.
     // (fee will actually be 51539.607552)
     client._maxFeeXRP = '51540'

@@ -1,12 +1,12 @@
-import * as utils from './utils'
-import parseTransaction from './parse/transaction'
-import {validate, errors} from '../common'
-import {Connection} from '../common'
-import {FormattedTransactionType} from '../transaction/types'
-import {RippledError} from '../common/errors'
 import {Client} from '..'
+import {validate, errors, Connection} from '../common'
+import {RippledError} from '../common/errors'
+import {FormattedTransactionType} from '../transaction/types'
 
-export type TransactionOptions = {
+import parseTransaction from './parse/transaction'
+import * as utils from './utils'
+
+export interface TransactionOptions {
   minLedgerVersion?: number
   maxLedgerVersion?: number
   includeRawTransaction?: boolean
@@ -49,7 +49,7 @@ function attachTransactionDate(
     .request(request)
     .then((data) => {
       if (typeof data.ledger.close_time === 'number') {
-        return Object.assign({date: data.ledger.close_time}, tx)
+        return {date: data.ledger.close_time, ...tx}
       }
       throw new errors.UnexpectedError('Ledger missing close_time')
     })
@@ -114,7 +114,7 @@ function formatResponse(
   options: TransactionOptions,
   tx: TransactionResponse
 ): FormattedTransactionType {
-  if (tx.validated !== true || !isTransactionInRange(tx, options)) {
+  if (!tx.validated || !isTransactionInRange(tx, options)) {
     throw new errors.NotFoundError('Transaction not found')
   }
   return parseTransaction(tx, options.includeRawTransaction)

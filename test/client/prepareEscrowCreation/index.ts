@@ -1,6 +1,7 @@
 import requests from '../../fixtures/requests'
 import responses from '../../fixtures/responses'
 import {assertRejects, assertResultMatch, TestSuite} from '../../utils'
+
 const instructionsWithMaxLedgerVersionOffset = {maxLedgerVersionOffset: 100}
 
 export const config = {
@@ -38,7 +39,7 @@ export default <TestSuite>{
   },
 
   'prepareEscrowCreation - invalid': async (client, address) => {
-    const escrow = Object.assign({}, requests.prepareEscrowCreation.full)
+    const escrow = {...requests.prepareEscrowCreation.full}
     delete escrow.amount // Make invalid
     await assertRejects(
       client.prepareEscrowCreation(address, escrow),

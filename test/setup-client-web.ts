@@ -1,4 +1,5 @@
 import {Client, ClientBroadcast} from 'xrpl-local'
+
 import ledgerClosed from './fixtures/rippled/ledger-close.json'
 
 const port = 34371
@@ -59,7 +60,7 @@ function teardown(this: any) {
 }
 
 export default {
-  setup: setup,
-  teardown: teardown,
-  setupBroadcast: setupBroadcast
+  setup,
+  teardown,
+  setupBroadcast
 }

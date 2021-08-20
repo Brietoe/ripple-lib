@@ -1,6 +1,7 @@
 import {Client} from 'xrpl-local'
-import {TestSuite} from '../../utils'
+
 import Wallet from '../../../src/Wallet'
+import {TestSuite} from '../../utils'
 
 const {schemaValidator} = Client._PRIVATE
 const publicKey =
@@ -15,7 +16,7 @@ const address = 'rhvh5SrgBL5V8oeV9EpDuVszeJSSCEkbPc'
  * - Check out "test/api/index.ts" for more information about the test runner.
  */
 export default <TestSuite>{
-  'sign transaction offline with txJSON': async (api) => {
+  'sign transaction offline with txJSON': async (_api) => {
     // GIVEN a transaction
     const txJSON = {
       TransactionType: 'Payment',
@@ -34,5 +35,5 @@ export default <TestSuite>{
 
     // THEN we get a signedTransaction
     schemaValidator.schemaValidate('sign', signedTx)
-  },
+  }
 }

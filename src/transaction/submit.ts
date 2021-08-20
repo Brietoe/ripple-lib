@@ -4,9 +4,10 @@
 //     fail_hard: failHard
 //   });
 
-import * as utils from './utils'
-import {validate} from '../common'
 import {Client} from '..'
+import {validate} from '../common'
+
+import * as utils from './utils'
 
 export interface FormattedSubmitResponse {
   resultCode: string

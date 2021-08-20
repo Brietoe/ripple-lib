@@ -1,19 +1,23 @@
-import _ from 'lodash'
 import assert from 'assert'
-import wallet from './wallet'
-import requests from '../fixtures/requests'
-import {Client} from 'xrpl-local'
+
+import _ from 'lodash'
 import {isValidClassicAddress} from 'ripple-address-codec'
-import {payTo, ledgerAccept} from './utils'
+
+import {Client} from 'xrpl-local'
 import {errors} from 'xrpl-local/common'
 import {isValidSecret} from 'xrpl-local/common/utils'
+
+import requests from '../fixtures/requests'
+
+import {payTo, ledgerAccept} from './utils'
+import wallet from './wallet'
 
 // how long before each test case times out
 const TIMEOUT = 20000
 const INTERVAL = 1000 // how long to wait between checks for validated ledger
 
-const HOST = process.env.HOST ?? "0.0.0.0"
-const PORT = process.env.PORT ?? "6006"
+const HOST = process.env.HOST ?? '0.0.0.0'
+const PORT = process.env.PORT ?? '6006'
 const serverUrl = `ws://${HOST}:${PORT}`
 
 console.log(serverUrl)
@@ -55,7 +59,7 @@ function verifyTransaction(testcase, hash, type, options, txData, address) {
         })
       }
       console.log(error.stack)
-      assert(false, 'Transaction not successful: ' + error.message)
+      assert(false, `Transaction not successful: ${error.message}`)
     })
 }
 
@@ -282,12 +286,12 @@ describe('integration tests', function () {
     const amount = {currency: 'XRP', value: '0.000001'}
     const paymentSpecification = {
       source: {
-        address: address,
+        address,
         maxAmount: amount
       },
       destination: {
         address: 'rKmBGxocj9Abgy25J51Mk1iqFzW9aVF9Tc',
-        amount: amount
+        amount
       }
     }
     return this.client.getLedgerVersion().then((ledgerVersion) => {
@@ -322,11 +326,9 @@ describe('integration tests', function () {
           const txData = JSON.parse(result.txJSON)
           return this.client.getOrders(address).then((orders) => {
             assert(orders && orders.length > 0)
-            const createdOrder = (
-              orders.filter((order) => {
-                return order.properties.sequence === txData.Sequence
-              })
-            )[0]
+            const createdOrder = orders.filter((order) => {
+              return order.properties.sequence === txData.Sequence
+            })[0]
             assert(createdOrder)
             assert.strictEqual(createdOrder.properties.maker, address)
             assert.deepEqual(createdOrder.specification, orderSpecification)
@@ -392,8 +394,8 @@ describe('integration tests', function () {
 
   it('getTrustlines', function () {
     const fixture = requests.prepareTrustline.simple
-    const { currency, counterparty } = fixture
-    const options = { currency, counterparty }
+    const {currency, counterparty} = fixture
+    const options = {currency, counterparty}
     return this.client.getTrustlines(address, options).then((data) => {
       assert(data && data.length > 0 && data[0] && data[0].specification)
       const specification = data[0].specification
@@ -405,8 +407,8 @@ describe('integration tests', function () {
 
   it('getBalances', function () {
     const fixture = requests.prepareTrustline.simple
-    const { currency, counterparty } = fixture
-    const options = { currency, counterparty }
+    const {currency, counterparty} = fixture
+    const options = {currency, counterparty}
     return this.client.getBalances(address, options).then((data) => {
       assert(data && data.length > 0 && data[0])
       assert.strictEqual(data[0].currency, fixture.currency)
@@ -452,7 +454,7 @@ describe('integration tests', function () {
   it('getPaths', function () {
     const pathfind = {
       source: {
-        address: address
+        address
       },
       destination: {
         address: this.newWallet.address,
@@ -475,7 +477,7 @@ describe('integration tests', function () {
   it('getPaths - send all', function () {
     const pathfind = {
       source: {
-        address: address,
+        address,
         amount: {
           currency: 'USD',
           value: '0.005'
@@ -555,9 +557,7 @@ describe('integration tests - standalone rippled', function () {
         })
       })
       .then(() => {
-        const multisignInstructions = Object.assign({}, instructions, {
-          signersCount: 2
-        })
+        const multisignInstructions = {...instructions, signersCount: 2}
         return this.client
           .prepareSettings(
             address,
@@ -577,7 +577,9 @@ describe('integration tests - standalone rippled', function () {
             ])
             return this.client
               .submit(combined.signedTransaction)
-              .then((response) => acceptLedger(this.client).then(() => response))
+              .then((response) =>
+                acceptLedger(this.client).then(() => response)
+              )
               .then((response) => {
                 assert.strictEqual(response.resultCode, 'tesSUCCESS')
                 const options = {minLedgerVersion}

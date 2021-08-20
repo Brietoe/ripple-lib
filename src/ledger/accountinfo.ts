@@ -1,17 +1,17 @@
+import {Client} from '..'
 import {
   validate,
   removeUndefined,
   dropsToXrp,
   ensureClassicAddress
 } from '../common'
-import {Client} from '..'
 import {AccountInfoResponse} from '../common/types/commands/account_info'
 
-export type GetAccountInfoOptions = {
+export interface GetAccountInfoOptions {
   ledgerVersion?: number
 }
 
-export type FormattedGetAccountInfoResponse = {
+export interface FormattedGetAccountInfoResponse {
   sequence: number
   xrpBalance: string
   ownerCount: number

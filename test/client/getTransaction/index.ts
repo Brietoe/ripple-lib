@@ -1,14 +1,17 @@
 import assert from 'assert-diff'
+
 import {
   MissingLedgerHistoryError,
   NotFoundError,
   UnexpectedError
 } from 'xrpl-local/common/errors'
+
 import {PendingLedgerVersionError} from '../../../src/common/errors'
 import hashes from '../../fixtures/hashes.json'
 import responses from '../../fixtures/responses'
 import ledgerClosed from '../../fixtures/rippled/ledger-close-newer.json'
 import {assertRejects, assertResultMatch, TestSuite} from '../../utils'
+
 const {getTransaction: RESPONSE_FIXTURES} = responses
 
 function closeLedger(connection) {
@@ -54,7 +57,7 @@ export default <TestSuite>{
     const options = {
       includeRawTransaction: true
     }
-    const expected = Object.assign({}, RESPONSE_FIXTURES.settings) // Avoid mutating test fixture
+    const expected = {...RESPONSE_FIXTURES.settings} // Avoid mutating test fixture
     expected.rawTransaction =
       '{"Account":"rLVKsA4F9iJBbA6rX2x4wCmkj6drgtqpQe","Fee":"10","Flags":2147483648,"Sequence":1,"SetFlag":2,"SigningPubKey":"03EA3ADCA632F125EC2CC4F7F6A82DE0DCE2B65290CAC1F22242C5163F0DA9652D","TransactionType":"AccountSet","TxnSignature":"3045022100DE8B666B1A31EA65011B0F32130AB91A5747E32FA49B3054CEE8E8362DBAB98A022040CF0CF254677A8E5CD04C59CA2ED7F6F15F7E184641BAE169C561650967B226","date":460832270,"hash":"4FB3ADF22F3C605E23FAEFAA185F3BD763C4692CAC490D9819D117CD33BFAA1B","inLedger":8206418,"ledger_index":8206418,"meta":{"AffectedNodes":[{"ModifiedNode":{"FinalFields":{"Account":"rLVKsA4F9iJBbA6rX2x4wCmkj6drgtqpQe","Balance":"29999990","Flags":786432,"OwnerCount":0,"Sequence":2},"LedgerEntryType":"AccountRoot","LedgerIndex":"3F5072C4875F32ED770DAF3610A716600ED7C7BB0348FADC7A98E011BB2CD36F","PreviousFields":{"Balance":"30000000","Flags":4194304,"Sequence":1},"PreviousTxnID":"3FB0350A3742BBCC0D8AA3C5247D1AEC01177D0A24D9C34762BAA2FEA8AD88B3","PreviousTxnLgrSeq":8206397}}],"TransactionIndex":5,"TransactionResult":"tesSUCCESS"},"validated":true}'
     const response = await client.getTransaction(hash, options)
@@ -73,7 +76,11 @@ export default <TestSuite>{
     const hash = hashes.WITH_MEMOS_OFFER_CREATE_TRANSACTION_HASH
     closeLedger(client.connection)
     const response = await client.getTransaction(hash)
-    assertResultMatch(response, RESPONSE_FIXTURES.orderWithMemo, 'getTransaction')
+    assertResultMatch(
+      response,
+      RESPONSE_FIXTURES.orderWithMemo,
+      'getTransaction'
+    )
   },
 
   'sell order': async (client, address) => {
@@ -279,7 +286,11 @@ export default <TestSuite>{
   'CheckCreate with memo': async (client, address) => {
     const hash = hashes.WITH_MEMOS_CHECK_CREATE_TRANSACTION_HASH
     const response = await client.getTransaction(hash)
-    assertResultMatch(response, RESPONSE_FIXTURES.checkCreateWithMemo, 'getTransaction')
+    assertResultMatch(
+      response,
+      RESPONSE_FIXTURES.checkCreateWithMemo,
+      'getTransaction'
+    )
   },
 
   'CheckCancel': async (client, address) => {
@@ -292,7 +303,11 @@ export default <TestSuite>{
   'CheckCancel with memo': async (client, address) => {
     const hash = hashes.WITH_MEMOS_CHECK_CANCEL_TRANSACTION_HASH
     const response = await client.getTransaction(hash)
-    assertResultMatch(response, RESPONSE_FIXTURES.checkCancelWithMemo, 'getTransaction')
+    assertResultMatch(
+      response,
+      RESPONSE_FIXTURES.checkCancelWithMemo,
+      'getTransaction'
+    )
   },
 
   'CheckCash': async (client, address) => {
@@ -305,7 +320,11 @@ export default <TestSuite>{
   'CheckCash with memo': async (client, address) => {
     const hash = hashes.WITH_MEMOS_CHECK_CASH_TRANSACTION_HASH
     const response = await client.getTransaction(hash)
-    assertResultMatch(response, RESPONSE_FIXTURES.checkCashWithMemo, 'getTransaction')
+    assertResultMatch(
+      response,
+      RESPONSE_FIXTURES.checkCashWithMemo,
+      'getTransaction'
+    )
   },
 
   // Escrows
@@ -454,7 +473,7 @@ export default <TestSuite>{
     closeLedger(client.connection)
     const response = await client.getTransaction(hash)
     assert.strictEqual(
-      // @ts-ignore
+      // @ts-expect-error
       response.specification.UNAVAILABLE,
       'Unrecognized transaction type.'
     )

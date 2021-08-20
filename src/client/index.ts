@@ -1,4 +1,22 @@
 import {EventEmitter} from 'events'
+
+import {
+  classicAddressToXAddress,
+  xAddressToClassicAddress,
+  isValidXAddress,
+  isValidClassicAddress,
+  encodeSeed,
+  decodeSeed,
+  encodeAccountID,
+  decodeAccountID,
+  encodeNodePublic,
+  decodeNodePublic,
+  encodeAccountPublic,
+  decodeAccountPublic,
+  encodeXAddress,
+  decodeXAddress
+} from 'ripple-address-codec'
+
 import {
   Connection,
   constants,
@@ -9,48 +27,25 @@ import {
   rippleTimeToISO8601,
   iso8601ToRippleTime,
   txFlags,
-  ensureClassicAddress,
+  ensureClassicAddress
 } from '../common'
+import {ConnectionUserOptions} from '../common/connection'
 import {
-  getLedgerVersion,
-  formatLedgerClose
-} from './utils'
-import getTransaction from '../ledger/transaction'
-import getTransactions from '../ledger/transactions'
-import getTrustlines from '../ledger/trustlines'
-import getBalances from '../ledger/balances'
-import getBalanceSheet from '../ledger/balance-sheet'
-import getPaths from '../ledger/pathfind'
-import getOrders from '../ledger/orders'
-import {getOrderbook, formatBidsAndAsks} from '../ledger/orderbook'
-import {getSettings, parseAccountFlags} from '../ledger/settings'
-import getAccountInfo from '../ledger/accountinfo'
-import getAccountObjects from '../ledger/accountobjects'
-import getPaymentChannel from '../ledger/payment-channel'
-import preparePayment from '../transaction/payment'
-import prepareTrustline from '../transaction/trustline'
-import prepareOrder from '../transaction/order'
-import prepareOrderCancellation from '../transaction/ordercancellation'
-import prepareEscrowCreation from '../transaction/escrow-creation'
-import prepareEscrowExecution from '../transaction/escrow-execution'
-import prepareEscrowCancellation from '../transaction/escrow-cancellation'
-import preparePaymentChannelCreate from '../transaction/payment-channel-create'
-import preparePaymentChannelFund from '../transaction/payment-channel-fund'
-import preparePaymentChannelClaim from '../transaction/payment-channel-claim'
-import prepareCheckCreate from '../transaction/check-create'
-import prepareCheckCancel from '../transaction/check-cancel'
-import prepareCheckCash from '../transaction/check-cash'
-import prepareSettings from '../transaction/settings'
-import prepareTicketCreate from '../transaction/ticket'
-import {sign} from '../transaction/sign'
-import combine from '../transaction/combine'
-import submit from '../transaction/submit'
-import { generateAddress, generateXAddress } from '../offline/utils'
-import {deriveKeypair, deriveAddress, deriveXAddress} from '../offline/derive'
-import computeLedgerHash from '../offline/ledgerhash'
-import signPaymentChannelClaim from '../offline/sign-payment-channel-claim'
-import verifyPaymentChannelClaim from '../offline/verify-payment-channel-claim'
-import getLedger from '../ledger/ledger'
+  computeBinaryTransactionHash,
+  computeTransactionHash,
+  computeBinaryTransactionSigningHash,
+  computeAccountLedgerObjectID,
+  computeSignerListLedgerObjectID,
+  computeOrderID,
+  computeTrustlineHash,
+  computeTransactionTreeHash,
+  computeStateTreeHash,
+  computeEscrowHash,
+  computePaymentChannelHash
+} from '../common/hashes'
+import RangeSet from '../common/rangeset'
+import * as schemaValidator from '../common/schema-validator'
+import {getServerInfo, getFee} from '../common/serverinfo'
 import {
   AccountObjectsRequest,
   AccountObjectsResponse,
@@ -73,46 +68,49 @@ import {
   ServerInfoRequest,
   ServerInfoResponse
 } from '../common/types/commands'
-
-import RangeSet from '../common/rangeset'
+import getAccountInfo from '../ledger/accountinfo'
+import getAccountObjects from '../ledger/accountobjects'
+import getBalanceSheet from '../ledger/balance-sheet'
+import getBalances from '../ledger/balances'
+import getLedger from '../ledger/ledger'
+import {getOrderbook, formatBidsAndAsks} from '../ledger/orderbook'
+import getOrders from '../ledger/orders'
+import getPaths from '../ledger/pathfind'
+import getPaymentChannel from '../ledger/payment-channel'
+import {getSettings, parseAccountFlags} from '../ledger/settings'
+import getTransaction from '../ledger/transaction'
+import getTransactions from '../ledger/transactions'
+import getTrustlines from '../ledger/trustlines'
 import * as ledgerUtils from '../ledger/utils'
-import * as transactionUtils from '../transaction/utils'
-import * as schemaValidator from '../common/schema-validator'
-import {getServerInfo, getFee} from '../common/serverinfo'
 import {clamp, renameCounterpartyToIssuer} from '../ledger/utils'
+import {deriveKeypair, deriveAddress, deriveXAddress} from '../offline/derive'
+import computeLedgerHash from '../offline/ledgerhash'
+import signPaymentChannelClaim from '../offline/sign-payment-channel-claim'
+import {generateAddress, generateXAddress} from '../offline/utils'
+import verifyPaymentChannelClaim from '../offline/verify-payment-channel-claim'
+import prepareCheckCancel from '../transaction/check-cancel'
+import prepareCheckCash from '../transaction/check-cash'
+import prepareCheckCreate from '../transaction/check-create'
+import combine from '../transaction/combine'
+import prepareEscrowCancellation from '../transaction/escrow-cancellation'
+import prepareEscrowCreation from '../transaction/escrow-creation'
+import prepareEscrowExecution from '../transaction/escrow-execution'
+import prepareOrder from '../transaction/order'
+import prepareOrderCancellation from '../transaction/ordercancellation'
+import preparePayment from '../transaction/payment'
+import preparePaymentChannelClaim from '../transaction/payment-channel-claim'
+import preparePaymentChannelCreate from '../transaction/payment-channel-create'
+import preparePaymentChannelFund from '../transaction/payment-channel-fund'
+import prepareSettings from '../transaction/settings'
+import {sign} from '../transaction/sign'
+import submit from '../transaction/submit'
+import prepareTicketCreate from '../transaction/ticket'
+import prepareTrustline from '../transaction/trustline'
 import {TransactionJSON, Instructions, Prepare} from '../transaction/types'
-import {ConnectionUserOptions} from '../common/connection'
-import {
-  classicAddressToXAddress,
-  xAddressToClassicAddress,
-  isValidXAddress,
-  isValidClassicAddress,
-  encodeSeed,
-  decodeSeed,
-  encodeAccountID,
-  decodeAccountID,
-  encodeNodePublic,
-  decodeNodePublic,
-  encodeAccountPublic,
-  decodeAccountPublic,
-  encodeXAddress,
-  decodeXAddress
-} from 'ripple-address-codec'
-import {
-  computeBinaryTransactionHash,
-  computeTransactionHash,
-  computeBinaryTransactionSigningHash,
-  computeAccountLedgerObjectID,
-  computeSignerListLedgerObjectID,
-  computeOrderID,
-  computeTrustlineHash,
-  computeTransactionTreeHash,
-  computeStateTreeHash,
-  computeEscrowHash,
-  computePaymentChannelHash
-} from '../common/hashes'
-
+import * as transactionUtils from '../transaction/utils'
 import generateFaucetWallet from '../wallet/wallet-generation'
+
+import {getLedgerVersion, formatLedgerClose} from './utils'
 
 export interface ClientOptions extends ConnectionUserOptions {
   server?: string
@@ -122,10 +120,15 @@ export interface ClientOptions extends ConnectionUserOptions {
   timeout?: number
 }
 
+const DEFAULT_FEE_CUSHION = 1.2
+const DEFAULT_MAX_XRP = '2'
+
 /**
  * Get the response key / property name that contains the listed data for a
  * command. This varies from command to command, but we need to know it to
  * properly count across many requests.
+ *
+ * @param command
  */
 function getCollectKeyFromCommand(command: string): string | undefined {
   switch (command) {
@@ -140,135 +143,162 @@ function getCollectKeyFromCommand(command: string): string | undefined {
 }
 
 class Client extends EventEmitter {
-  _feeCushion: number
-  _maxFeeXRP: string
-
-  // New in > 0.21.0
-  // non-validated ledger versions are allowed, and passed to rippled as-is.
-  connection: Connection
+  public static renameCounterpartyToIssuer = renameCounterpartyToIssuer
+  public static formatBidsAndAsks = formatBidsAndAsks
 
   // these are exposed only for use by unit tests; they are not part of the client.
-  static _PRIVATE = {
+  private static readonly PRIVATE = {
     validate,
     RangeSet,
     ledgerUtils,
     schemaValidator
   }
 
-  static renameCounterpartyToIssuer = renameCounterpartyToIssuer
-  static formatBidsAndAsks = formatBidsAndAsks
+  private readonly feeCushion: number
+  private readonly maxFeeXRP: string
 
-  constructor(options: ClientOptions = {}) {
+  // New in > 0.21.0
+  // non-validated ledger versions are allowed, and passed to rippled as-is.
+  private readonly connection: Connection
+
+  /**
+   * Constructor for Client. Client uses a 4000 code internally to indicate a
+   * manual disconnect/close. Since 4000 is a normal disconnect reason, we
+   * convert this to the standard exit code 1000.
+   *
+   * @param options - Options to construct a Client from.
+   */
+  public constructor(options: ClientOptions = {}) {
     super()
     validate.apiOptions(options)
-    this._feeCushion = options.feeCushion || 1.2
-    this._maxFeeXRP = options.maxFeeXRP || '2'
+    this.feeCushion = options.feeCushion || DEFAULT_FEE_CUSHION
+    this.maxFeeXRP = options.maxFeeXRP || DEFAULT_MAX_XRP
     const serverURL = options.server
-    if (serverURL != null) {
-      this.connection = new Connection(serverURL, options)
-      this.connection.on('ledgerClosed', (message) => {
-        this.emit('ledger', formatLedgerClose(message))
-      })
-      this.connection.on('error', (errorCode, errorMessage, data) => {
-        this.emit('error', errorCode, errorMessage, data)
-      })
-      this.connection.on('connected', () => {
-        this.emit('connected')
-      })
-      this.connection.on('disconnected', (code) => {
-        let finalCode = code
-        // 4000: Connection uses a 4000 code internally to indicate a manual disconnect/close
-        // Since 4000 is a normal disconnect reason, we convert this to the standard exit code 1000
-        if (finalCode === 4000) {
-          finalCode = 1000 
-        }
-        this.emit('disconnected', finalCode)
-      })
-    } else {
-      // use null object pattern to provide better error message if user
-      // tries to call a method that requires a connection
+    if (serverURL === null) {
       this.connection = new Connection(null, options)
+      return
     }
+
+    this.connection = new Connection(serverURL, options)
+    this.connection.on('ledgerClosed', (message) => {
+      this.emit('ledger', formatLedgerClose(message))
+    })
+    this.connection.on('error', (errorCode, errorMessage, data) => {
+      this.emit('error', errorCode, errorMessage, data)
+    })
+    this.connection.on('connected', () => {
+      this.emit('connected')
+    })
+    this.connection.on('disconnected', (code: number) => {
+      let finalCode = code
+      if (finalCode === 4000) {
+        finalCode = 1000
+      }
+      this.emit('disconnected', finalCode)
+    })
   }
 
   /**
    * Makes a request to the client with the given command and
    * additional request body parameters.
    */
-  async request(
+  public async request(
     command: 'account_info',
     params: AccountInfoRequest
   ): Promise<AccountInfoResponse>
-  async request(
+  public async request(
     command: 'account_lines',
     params: AccountLinesRequest
   ): Promise<AccountLinesResponse>
-  async request(
+  public async request(
     command: 'account_objects',
     params: AccountObjectsRequest
   ): Promise<AccountObjectsResponse>
-  async request(
+  public async request(
     command: 'account_offers',
     params: AccountOffersRequest
   ): Promise<AccountOffersResponse>
-  async request(
+  public async request(
     command: 'book_offers',
     params: BookOffersRequest
   ): Promise<BookOffersResponse>
-  async request(
+  public async request(
     command: 'gateway_balances',
     params: GatewayBalancesRequest
   ): Promise<GatewayBalancesResponse>
-  async request(
+  public async request(
     command: 'ledger',
     params: LedgerRequest
   ): Promise<LedgerResponse>
-  async request(
+  public async request(
     command: 'ledger_data',
     params?: LedgerDataRequest
   ): Promise<LedgerDataResponse>
-  async request(
+  public async request(
     command: 'ledger_entry',
     params: LedgerEntryRequest
   ): Promise<LedgerEntryResponse>
-  async request(
+  public async request(
     command: 'server_info',
     params?: ServerInfoRequest
   ): Promise<ServerInfoResponse>
-  async request(command: string, params: any): Promise<any>
-  async request(command: string, params: any = {}): Promise<any> {
-    return this.connection.request({
+  public async request<Request, Response>(
+    command: string,
+    params: Request
+  ): Promise<Response>
+
+  /**
+   * Makes a request to rippled.
+   *
+   * @param command - Rippled command.
+   * @param params - Params for given command.
+   * @returns Rippled response.
+   */
+  public async request<Request, Response>(
+    command: string,
+    params: Request
+  ): Promise<Response> {
+    const response: Response = this.connection.request({
       ...params,
       command,
       account: params.account ? ensureClassicAddress(params.account) : undefined
     })
+
+    return response
   }
 
   /**
-   * Returns true if there are more pages of data.
+   * Returns true if there are more pages of data. When there are more results
+   * than contained in the response, the response includes a `marker` field.
    *
-   * When there are more results than contained in the response, the response
-   * includes a `marker` field.
+   * See https://ripple.com/build/rippled-apis/#markers-and-pagination.
    *
-   * See https://ripple.com/build/rippled-apis/#markers-and-pagination
+   * @param currentResponse - Current response from rippled.
+   * @returns True if client can fetch another page.
    */
-  hasNextPage<T extends {marker?: string}>(currentResponse: T): boolean {
-    return !!currentResponse.marker
+  public hasNextPage<T extends {marker?: string}>(currentResponse: T): boolean {
+    return Boolean(currentResponse.marker)
   }
 
-  async requestNextPage<T extends {marker?: string}>(
+  /**
+   * Request the next page from rippled.
+   *
+   * @param command - String command for request being made.
+   * @param params - Params for request being made.
+   * @param previousResponse - Previous response.
+   * @returns Next response.
+   */
+  public async requestNextPage<T extends {marker?: string}>(
     command: string,
-    params: object = {},
-    currentResponse: T
+    params: Record<string, string>,
+    previousResponse: T
   ): Promise<T> {
-    if (!currentResponse.marker) {
+    if (!previousResponse.marker) {
       return Promise.reject(
         new errors.NotFoundError('response does not have a next page')
       )
     }
-    const nextPageParams = Object.assign({}, params, {
-      marker: currentResponse.marker
-    })
+    const nextPageParams = {...params, marker: previousResponse.marker}
     return this.request(command, nextPageParams)
   }
 
@@ -276,6 +306,9 @@ class Client extends EventEmitter {
    * Prepare a transaction.
    *
    * You can later submit the transaction with a `submit` request.
+   *
+   * @param txJSON
+   * @param instructions
    */
   async prepareTransaction(
     txJSON: TransactionJSON,
@@ -289,7 +322,7 @@ class Client extends EventEmitter {
    *
    * This can be used to generate `MemoData`, `MemoType`, and `MemoFormat`.
    *
-   * @param string string to convert to hex
+   * @param string - String to convert to hex.
    */
   convertStringToHex(string: string): string {
     return transactionUtils.convertStringToHex(string)
@@ -334,7 +367,7 @@ class Client extends EventEmitter {
     // If limit is not provided, fetches all data over multiple requests.
     // NOTE: This may return much more than needed. Set limit when possible.
     const countTo: number = params.limit != null ? params.limit : Infinity
-    let count: number = 0
+    let count = 0
     let marker: string = params.marker
     let lastBatchLength: number
     const results = []
@@ -347,7 +380,7 @@ class Client extends EventEmitter {
       }
       const singleResult = await this.request(command, repeatProps)
       const collectedData = singleResult[collectKey]
-      marker = singleResult['marker']
+      marker = singleResult.marker
       results.push(singleResult)
       // Make sure we handle when no data (not even an empty array) is returned.
       const isExpectedFormat = Array.isArray(collectedData)
@@ -357,7 +390,7 @@ class Client extends EventEmitter {
       } else {
         lastBatchLength = 0
       }
-    } while (!!marker && count < countTo && lastBatchLength !== 0)
+    } while (Boolean(marker) && count < countTo && lastBatchLength !== 0)
     return results
   }
 
@@ -368,11 +401,11 @@ class Client extends EventEmitter {
   isConnected(): boolean {
     return this.connection.isConnected()
   }
-  
+
   async connect(): Promise<void> {
     return this.connection.connect()
   }
-  
+
   async disconnect(): Promise<void> {
     // backwards compatibility: connection.disconnect() can return a number, but
     // this method returns nothing. SO we await but don't return any result.
@@ -434,7 +467,7 @@ class Client extends EventEmitter {
   static deriveClassicAddress = deriveAddress
 
   /**
-   * Static methods to expose ripple-address-codec methods
+   * Static methods to expose ripple-address-codec methods.
    */
   static classicAddressToXAddress = classicAddressToXAddress
   static xAddressToClassicAddress = xAddressToClassicAddress
@@ -452,7 +485,7 @@ class Client extends EventEmitter {
   static decodeXAddress = decodeXAddress
 
   /**
-   * Static methods that replace functionality from the now-deprecated ripple-hashes library
+   * Static methods that replace functionality from the now-deprecated ripple-hashes library.
    */
   // Compute the hash of a binary transaction blob.
   // @deprecated Invoke from top-level package instead
@@ -463,6 +496,7 @@ class Client extends EventEmitter {
   // @deprecated Invoke from top-level package instead
   static computeBinaryTransactionSigningHash =
     computeBinaryTransactionSigningHash // (txBlobHex: string): string
+
   // Compute the hash of an account, given the account's classic address (starting with `r`).
   // @deprecated Invoke from top-level package instead
   static computeAccountLedgerObjectID = computeAccountLedgerObjectID // (address: string): string
@@ -500,9 +534,7 @@ class Client extends EventEmitter {
   isValidSecret = schemaValidator.isValidSecret
 }
 
-export {
-  Client
-}
+export {Client}
 
 export type {
   AccountObjectsRequest,

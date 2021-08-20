@@ -1,9 +1,10 @@
 import {classicAddressToXAddress} from 'ripple-address-codec'
 import keypairs from 'ripple-keypairs'
+
 import {errors, validate} from '../common'
 import ECDSA from '../common/ecdsa'
 
-export type GeneratedAddress = {
+export interface GeneratedAddress {
   xAddress: string
   classicAddress?: string
   address?: string // @deprecated Use `classicAddress` instead.
@@ -26,7 +27,9 @@ export interface GenerateAddressOptions {
   includeClassicAddress?: boolean
 }
 
-function generateAddressAPI(options: GenerateAddressOptions = {}): GeneratedAddress {
+function generateAddressAPI(
+  options: GenerateAddressOptions = {}
+): GeneratedAddress {
   validate.generateAddress({options})
   try {
     const generateSeedOptions: {

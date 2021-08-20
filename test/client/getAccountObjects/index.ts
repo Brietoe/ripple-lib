@@ -1,5 +1,6 @@
 import responses from '../../fixtures/responses'
 import {assertResultMatch, TestSuite} from '../../utils'
+
 const {getAccountObjects: RESPONSE_FIXTURES} = responses
 
 /**
@@ -14,7 +15,7 @@ export default <TestSuite>{
   },
 
   'getAccountObjects - invalid options': async (client, address) => {
-    // @ts-ignore - This is intentionally invalid
+    // @ts-expect-error - This is intentionally invalid
     const result = await client.getAccountObjects(address, {invalid: 'options'})
     assertResultMatch(result, RESPONSE_FIXTURES, 'AccountObjectsResponse')
   }

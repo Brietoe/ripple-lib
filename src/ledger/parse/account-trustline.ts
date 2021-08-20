@@ -1,9 +1,10 @@
-import {parseQuality} from './utils'
 import {removeUndefined} from '../../common'
 import {
   Trustline,
   FormattedTrustline
 } from '../../common/types/objects/trustlines'
+
+import {parseQuality} from './utils'
 
 // rippled 'account_lines' returns a different format for
 // trustlines than 'tx'

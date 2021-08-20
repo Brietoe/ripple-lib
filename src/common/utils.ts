@@ -1,9 +1,10 @@
-import * as _ from 'lodash'
 import BigNumber from 'bignumber.js'
-import {deriveKeypair} from 'ripple-keypairs'
-import {RippledAmount} from './types/objects'
-import {ValidationError} from './errors'
+import * as _ from 'lodash'
 import {xAddressToClassicAddress} from 'ripple-address-codec'
+import {deriveKeypair} from 'ripple-keypairs'
+
+import {ValidationError} from './errors'
+import {RippledAmount} from './types/objects'
 
 function isValidSecret(secret: string): boolean {
   try {
@@ -107,8 +108,9 @@ function xrpToDrops(xrp: BigNumber.Value): string {
 }
 
 function toRippledAmount(amount: RippledAmount): RippledAmount {
-  if (typeof amount === 'string')
-    return amount;
+  if (typeof amount === 'string') {
+    return amount
+  }
 
   if (amount.currency === 'XRP') {
     return xrpToDrops(amount.value)
@@ -118,14 +120,16 @@ function toRippledAmount(amount: RippledAmount): RippledAmount {
   }
 
   let issuer = amount.counterparty || amount.issuer
-  let tag: number | false = false;
+  let tag: number | false = false
 
   try {
-    ({classicAddress: issuer, tag} = xAddressToClassicAddress(issuer))
-  } catch (e) { /* not an X-address */ }
-  
+    ;({classicAddress: issuer, tag} = xAddressToClassicAddress(issuer))
+  } catch (e) {
+    /* not an X-address */
+  }
+
   if (tag !== false) {
-    throw new ValidationError("Issuer X-address includes a tag")
+    throw new ValidationError('Issuer X-address includes a tag')
   }
 
   return {
@@ -139,38 +143,35 @@ function convertKeysFromSnakeCaseToCamelCase(obj: any): any {
   if (typeof obj === 'object') {
     const accumulator = Array.isArray(obj) ? [] : {}
     let newKey
-    return Object.entries(obj).reduce(
-      (result, [key, value]) => {
-        newKey = key
-        // taking this out of function leads to error in PhantomJS
-        const FINDSNAKE = /([a-zA-Z]_[a-zA-Z])/g
-        if (FINDSNAKE.test(key)) {
-          newKey = key.replace(FINDSNAKE, (r) => r[0] + r[2].toUpperCase())
-        }
-        result[newKey] = convertKeysFromSnakeCaseToCamelCase(value)
-        return result
-      },
-      accumulator
-    )
+    return Object.entries(obj).reduce((result, [key, value]) => {
+      newKey = key
+      // taking this out of function leads to error in PhantomJS
+      const FINDSNAKE = /([a-zA-Z]_[a-zA-Z])/g
+      if (FINDSNAKE.test(key)) {
+        newKey = key.replace(FINDSNAKE, (r) => r[0] + r[2].toUpperCase())
+      }
+      result[newKey] = convertKeysFromSnakeCaseToCamelCase(value)
+      return result
+    }, accumulator)
   }
   return obj
 }
 
 function removeUndefined<T extends object>(obj: T): T {
-  return _.omitBy(obj, value => value == null) as T
+  return _.omitBy(obj, (value) => value == null) as T
 }
 
 /**
- * @param {Number} rpepoch (seconds since 1/1/2000 GMT)
- * @return {Number} ms since unix epoch
+ * @param rpepoch - (seconds since 1/1/2000 GMT).
+ * @returns Ms since unix epoch.
  */
 function rippleToUnixTimestamp(rpepoch: number): number {
   return (rpepoch + 0x386d4380) * 1000
 }
 
 /**
- * @param {Number|Date} timestamp (ms since unix epoch)
- * @return {Number} seconds since ripple epoch (1/1/2000 GMT)
+ * @param timestamp - (ms since unix epoch).
+ * @returns Seconds since ripple epoch (1/1/2000 GMT).
  */
 function unixToRippleTimestamp(timestamp: number): number {
   return Math.round(timestamp / 1000) - 0x386d4380
@@ -181,8 +182,8 @@ function rippleTimeToISO8601(rippleTime: number): string {
 }
 
 /**
- * @param {string} iso8601 international standard date format
- * @return {number} seconds since ripple epoch (1/1/2000 GMT)
+ * @param iso8601 - International standard date format.
+ * @returns Seconds since ripple epoch (1/1/2000 GMT).
  */
 function iso8601ToRippleTime(iso8601: string): number {
   return unixToRippleTimestamp(Date.parse(iso8601))

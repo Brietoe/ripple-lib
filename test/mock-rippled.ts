@@ -1,14 +1,16 @@
-import _ from 'lodash'
-import fs from 'fs'
 import assert from 'assert'
-import {Server as WebSocketServer} from 'ws'
+import fs from 'fs'
+
 import {EventEmitter2} from 'eventemitter2'
-import fixtures from './fixtures/rippled'
+import _ from 'lodash'
+import {Server as WebSocketServer} from 'ws'
+
 import addresses from './fixtures/addresses.json'
 import hashes from './fixtures/hashes.json'
-import transactionsResponse from './fixtures/rippled/account-tx'
+import fixtures from './fixtures/rippled'
 import accountLinesResponse from './fixtures/rippled/account-lines'
 import accountObjectsResponse from './fixtures/rippled/account-objects'
+import transactionsResponse from './fixtures/rippled/account-tx'
 import fullLedger from './fixtures/rippled/ledger-full-38129.json'
 import {getFreePort} from './utils'
 
@@ -21,12 +23,12 @@ function isBTC(json) {
 }
 
 function createResponse(request, response, overrides = {}) {
-  const result = Object.assign({}, response.result, overrides)
+  const result = {...response.result, ...overrides}
   const change =
     response.result && !_.isEmpty(overrides)
-      ? {id: request.id, result: result}
+      ? {id: request.id, result}
       : {id: request.id}
-  return JSON.stringify(Object.assign({}, response, change))
+  return JSON.stringify({...response, ...change})
 }
 
 function createLedgerResponse(request, response) {
@@ -55,22 +57,22 @@ function createLedgerResponse(request, response) {
 type MockedWebSocketServer = any
 
 export function createMockRippled(port) {
-  const mock = new WebSocketServer({port: port}) as MockedWebSocketServer
+  const mock = new WebSocketServer({port}) as MockedWebSocketServer
   Object.assign(mock, EventEmitter2.prototype)
 
   const close = mock.close
   mock.close = function () {
     if (mock.expectedRequests != null) {
-      const allRequestsMade = Object.entries(mock.expectedRequests).every(function (
-        _, counter
-      ) {
-        return counter === 0
-      })
+      const allRequestsMade = Object.entries(mock.expectedRequests).every(
+        function (_, counter) {
+          return counter === 0
+        }
+      )
       if (!allRequestsMade) {
         const json = JSON.stringify(mock.expectedRequests, null, 2)
         const indent = '      '
-        const indented = indent + json.replace(/\n/g, '\n' + indent)
-        assert(false, 'Not all expected requests were made:\n' + indented)
+        const indented = indent + json.replace(/\n/g, `\n${indent}`)
+        assert(false, `Not all expected requests were made:\n${indented}`)
       }
     }
     close.call(mock)
@@ -91,9 +93,9 @@ export function createMockRippled(port) {
     conn.on('message', function (requestJSON) {
       try {
         const request = JSON.parse(requestJSON)
-        mock.emit('request_' + request.command, request, conn)
+        mock.emit(`request_${request.command}`, request, conn)
       } catch (err) {
-        console.error('Error: ' + err.message)
+        console.error(`Error: ${err.message}`)
         assert(false, err.message)
       }
     })
@@ -106,14 +108,14 @@ export function createMockRippled(port) {
       return
     }
     if (mock.listeners(this.event).length === 0) {
-      throw new Error('No event handler registered for ' + this.event)
+      throw new Error(`No event handler registered for ${this.event}`)
     }
     if (mock.expectedRequests == null) {
       return // TODO: fail here to require expectedRequests
     }
     const expectedCount = mock.expectedRequests[this.event]
     if (expectedCount == null || expectedCount === 0) {
-      throw new Error('Unexpected request: ' + this.event)
+      throw new Error(`Unexpected request: ${this.event}`)
     }
     mock.expectedRequests[this.event] -= 1
   })
@@ -213,8 +215,7 @@ export function createMockRippled(port) {
             validated_ledger: {
               age: 5,
               base_fee_xrp: 0.00001,
-              hash:
-                '4482DEE5362332F54A4036ED57EE1767C9F33CF7CE5A6670355C16CECE381D46',
+              hash: '4482DEE5362332F54A4036ED57EE1767C9F33CF7CE5A6670355C16CECE381D46',
               reserve_base_xrp: 20,
               reserve_inc_xrp: 5,
               seq: 6595042
@@ -248,7 +249,7 @@ export function createMockRippled(port) {
       mock.config.returnEmptySubscribeRequest--
       conn.send(createResponse(request, fixtures.empty))
     } else if (request.accounts) {
-      assert(Object.values(addresses).indexOf(request.accounts[0]) !== -1)
+      assert(Object.values(addresses).includes(request.accounts[0]))
     }
     conn.send(createResponse(request, fixtures.subscribe))
   })
@@ -256,7 +257,7 @@ export function createMockRippled(port) {
   mock.on('request_unsubscribe', function (request, conn) {
     assert.strictEqual(request.command, 'unsubscribe')
     if (request.accounts) {
-      assert(Object.values(addresses).indexOf(request.accounts[0]) !== -1)
+      assert(Object.values(addresses).includes(request.accounts[0]))
     } else {
       assert.deepEqual(request.streams, ['ledger', 'server'])
     }
@@ -268,7 +269,7 @@ export function createMockRippled(port) {
     if (request.account === addresses.ACCOUNT) {
       conn.send(accountObjectsResponse(request))
     } else {
-      assert(false, 'Unrecognized account address: ' + request.account)
+      assert(false, `Unrecognized account address: ${request.account}`)
     }
   })
 
@@ -279,46 +280,40 @@ export function createMockRippled(port) {
     } else if (request.account === addresses.NOTFOUND) {
       conn.send(createResponse(request, fixtures.account_info.notfound))
     } else if (request.account === addresses.THIRD_ACCOUNT) {
-      const response = Object.assign({}, fixtures.account_info.normal)
+      const response = {...fixtures.account_info.normal}
       response.Account = addresses.THIRD_ACCOUNT
       conn.send(createResponse(request, response))
     } else if (request.account == null) {
-      const response = Object.assign(
-        {},
-        {
-          error: 'invalidParams',
-          error_code: 31,
-          error_message: "Missing field 'account'.",
-          id: 2,
-          request: {command: 'account_info', id: 2},
-          status: 'error',
-          type: 'response'
-        }
-      )
+      const response = {
+        error: 'invalidParams',
+        error_code: 31,
+        error_message: "Missing field 'account'.",
+        id: 2,
+        request: {command: 'account_info', id: 2},
+        status: 'error',
+        type: 'response'
+      }
       conn.send(createResponse(request, response))
     } else {
-      const response = Object.assign(
-        {},
-        {
-          account: request.account,
-          error: 'actNotFound',
-          error_code: 19,
-          error_message: 'Account not found.',
-          id: 2,
-          ledger_current_index: 17714714,
-          request:
-            // This will be inaccurate, but that's OK because this is just a mock rippled
-            {
-              account: 'rogvkYnY8SWjxkJNgU4ZRVfLeRyt5DR9i',
-              command: 'account_info',
-              id: 2
-            },
+      const response = {
+        account: request.account,
+        error: 'actNotFound',
+        error_code: 19,
+        error_message: 'Account not found.',
+        id: 2,
+        ledger_current_index: 17714714,
+        request:
+          // This will be inaccurate, but that's OK because this is just a mock rippled
+          {
+            account: 'rogvkYnY8SWjxkJNgU4ZRVfLeRyt5DR9i',
+            command: 'account_info',
+            id: 2
+          },
 
-          status: 'error',
-          type: 'response',
-          validated: false
-        }
-      )
+        status: 'error',
+        type: 'response',
+        validated: false
+      }
       conn.send(createResponse(request, response))
     }
   })
@@ -346,9 +341,7 @@ export function createMockRippled(port) {
         createLedgerResponse(request, fixtures.ledger.pre2014withPartial)
       )
     } else if (request.ledger_index === 38129) {
-      const response = Object.assign({}, fixtures.ledger.normal, {
-        result: {ledger: fullLedger}
-      })
+      const response = {...fixtures.ledger.normal, result: {ledger: fullLedger}}
       conn.send(createLedgerResponse(request, response))
     } else if (
       request.ledger_hash ===
@@ -362,7 +355,7 @@ export function createMockRippled(port) {
     ) {
       conn.send(createLedgerResponse(request, fixtures.ledger.normal))
     } else {
-      assert(false, 'Unrecognized ledger request: ' + JSON.stringify(request))
+      assert(false, `Unrecognized ledger request: ${JSON.stringify(request)}`)
     }
   })
 
@@ -456,7 +449,8 @@ export function createMockRippled(port) {
     ) {
       conn.send(createResponse(request, fixtures.tx.OfferCancel))
     } else if (
-      request.transaction === hashes.WITH_MEMOS_ORDER_CANCELLATION_TRANSACTION_HASH
+      request.transaction ===
+      hashes.WITH_MEMOS_ORDER_CANCELLATION_TRANSACTION_HASH
     ) {
       conn.send(createResponse(request, fixtures.tx.OfferCancelWithMemo))
     } else if (
@@ -501,23 +495,20 @@ export function createMockRippled(port) {
       conn.send(createResponse(request, fixtures.tx.NotValidated))
     } else if (request.transaction === hashes.NOTFOUND_TRANSACTION_HASH) {
       conn.send(createResponse(request, fixtures.tx.NotFound))
-    } else if (request.transaction === hashes.WITH_MEMOS_ACCOUNT_DELETE_TRANSACTION_HASH) {
+    } else if (
+      request.transaction === hashes.WITH_MEMOS_ACCOUNT_DELETE_TRANSACTION_HASH
+    ) {
       conn.send(createResponse(request, fixtures.tx.AccountDeleteWithMemo))
     } else if (
       request.transaction ===
       '097B9491CC76B64831F1FEA82EAA93BCD728106D90B65A072C933888E946C40B'
     ) {
       conn.send(createResponse(request, fixtures.tx.OfferWithExpiration))
-    } else if (
-      request.transaction === hashes.WITH_MEMO_TRANSACTION_HASH
-    ) {
+    } else if (request.transaction === hashes.WITH_MEMO_TRANSACTION_HASH) {
       conn.send(createResponse(request, fixtures.tx.WithMemo))
-    } else if (
-      request.transaction === hashes.WITH_MEMOS_TRANSACTION_HASH
-    ) {
+    } else if (request.transaction === hashes.WITH_MEMOS_TRANSACTION_HASH) {
       conn.send(createResponse(request, fixtures.tx.WithMemos))
     }
-
 
     // Checks
     else if (
@@ -579,16 +570,20 @@ export function createMockRippled(port) {
     ) {
       conn.send(createResponse(request, fixtures.tx.PaymentChannelCreate))
     } else if (
-      request.transaction === hashes.WITH_MEMOS_PAYMENT_CHANNEL_CREATE_TRANSACTION_HASH
+      request.transaction ===
+      hashes.WITH_MEMOS_PAYMENT_CHANNEL_CREATE_TRANSACTION_HASH
     ) {
-      conn.send(createResponse(request, fixtures.tx.PaymentChannelCreateWithMemo))
+      conn.send(
+        createResponse(request, fixtures.tx.PaymentChannelCreateWithMemo)
+      )
     } else if (
       request.transaction ===
       'CD053D8867007A6A4ACB7A432605FE476D088DCB515AFFC886CF2B4EB6D2AE8B'
     ) {
       conn.send(createResponse(request, fixtures.tx.PaymentChannelFund))
     } else if (
-      request.transaction === hashes.WITH_MEMOS_PAYMENT_CHANNEL_FUND_TRANSACTION_HASH
+      request.transaction ===
+      hashes.WITH_MEMOS_PAYMENT_CHANNEL_FUND_TRANSACTION_HASH
     ) {
       conn.send(createResponse(request, fixtures.tx.PaymentChannelFundWithMemo))
     } else if (
@@ -597,9 +592,12 @@ export function createMockRippled(port) {
     ) {
       conn.send(createResponse(request, fixtures.tx.PaymentChannelClaim))
     } else if (
-      request.transaction === hashes.WITH_MEMOS_PAYMENT_CHANNEL_CLAIM_TRANSACTION_HASH
+      request.transaction ===
+      hashes.WITH_MEMOS_PAYMENT_CHANNEL_CLAIM_TRANSACTION_HASH
     ) {
-      conn.send(createResponse(request, fixtures.tx.PaymentChannelClaimWithMemo))
+      conn.send(
+        createResponse(request, fixtures.tx.PaymentChannelClaimWithMemo)
+      )
     } else if (
       request.transaction ===
       'EC2AB14028DC84DE525470AB4DAAA46358B50A8662C63804BFF38244731C0CB9'
@@ -643,7 +641,7 @@ export function createMockRippled(port) {
     ) {
       conn.send(createResponse(request, fixtures.tx.DepositPreauthWithMemo))
     } else {
-      assert(false, 'Unrecognized transaction hash: ' + request.transaction)
+      assert(false, `Unrecognized transaction hash: ${request.transaction}`)
     }
   })
 
@@ -677,7 +675,7 @@ export function createMockRippled(port) {
     } else if (request.account === addresses.NOTFOUND) {
       conn.send(createResponse(request, fixtures.account_info.notfound))
     } else {
-      assert(false, 'Unrecognized account address: ' + request.account)
+      assert(false, `Unrecognized account address: ${request.account}`)
     }
   })
 
@@ -687,7 +685,7 @@ export function createMockRippled(port) {
     } else if (request.account === addresses.OTHER_ACCOUNT) {
       conn.send(createResponse(request, fixtures.account_tx.one))
     } else {
-      assert(false, 'Unrecognized account address: ' + request.account)
+      assert(false, `Unrecognized account address: ${request.account}`)
     }
   })
 
@@ -695,11 +693,11 @@ export function createMockRippled(port) {
     if (request.account === addresses.ACCOUNT) {
       conn.send(fixtures.account_offers(request))
     } else {
-      assert(false, 'Unrecognized account address: ' + request.account)
+      assert(false, `Unrecognized account address: ${request.account}`)
     }
   })
 
-  let requestsCache = undefined
+  let requestsCache
 
   mock.on('request_book_offers', function (request, conn) {
     if (request.taker_pays.issuer === 'rp8rJYTpodf8qbSCHVTNacf8nSW8mRakFw') {
@@ -725,17 +723,18 @@ export function createMockRippled(port) {
     } else {
       const rippledDir = 'test/fixtures/rippled'
       if (!requestsCache) {
-        requestsCache = fs.readdirSync(rippledDir + '/requests')
+        requestsCache = fs.readdirSync(`${rippledDir}/requests`)
       }
-      for (var i = 0; i < requestsCache.length; i++) {
+      for (let i = 0; i < requestsCache.length; i++) {
         const file = requestsCache[i]
-        const json = fs.readFileSync(rippledDir + '/requests/' + file, 'utf8')
+        const json = fs.readFileSync(`${rippledDir}/requests/${file}`, 'utf8')
         const r = JSON.parse(json)
-        const requestWithoutId = Object.assign({}, request)
+        const requestWithoutId = {...request}
         delete requestWithoutId.id
         if (JSON.stringify(requestWithoutId) === JSON.stringify(r)) {
-          const responseFile =
-            rippledDir + '/responses/' + file.split('.')[0] + '-res.json'
+          const responseFile = `${rippledDir}/responses/${
+            file.split('.')[0]
+          }-res.json`
           const res = fs.readFileSync(responseFile, 'utf8')
           const response = createResponse(request, {
             id: 0,
@@ -748,7 +747,7 @@ export function createMockRippled(port) {
         }
       }
 
-      assert(false, 'Unrecognized order book: ' + JSON.stringify(request))
+      assert(false, `Unrecognized order book: ${JSON.stringify(request)}`)
     }
   })
 
@@ -834,7 +833,7 @@ export function createMockRippled(port) {
     } else {
       assert(
         false,
-        'Unrecognized path find request: ' + JSON.stringify(request)
+        `Unrecognized path find request: ${JSON.stringify(request)}`
       )
     }
     conn.send(response)

@@ -1,12 +1,14 @@
 import assert from 'assert-diff'
 import _ from 'lodash'
+
 import {Client} from 'xrpl-local'
 import {RecursiveData} from 'xrpl-local/ledger/utils'
-import {assertRejects, assertResultMatch} from './utils'
+
 import addresses from './fixtures/addresses.json'
 import responses from './fixtures/responses'
 import ledgerClosed from './fixtures/rippled/ledger-close-newer.json'
 import setupClient from './setup-client'
+import {assertRejects, assertResultMatch} from './utils'
 
 const {validate, schemaValidator, ledgerUtils} = Client._PRIVATE
 const address = addresses.ACCOUNT
@@ -25,7 +27,7 @@ describe('Client', function () {
   })
 
   it('Client invalid options', function () {
-    // @ts-ignore - This is intentionally invalid
+    // @ts-expect-error - This is intentionally invalid
     assert.throws(() => new Client({invalid: true}))
   })
 
@@ -156,7 +158,7 @@ describe('Client', function () {
   })
 
   it('ledger utils - compareTransactions', async () => {
-    // @ts-ignore
+    // @ts-expect-error
     assert.strictEqual(ledgerUtils.compareTransactions({}, {}), 0)
     let first: any = {outcome: {ledgerVersion: 1, indexInLedger: 100}}
     let second: any = {outcome: {ledgerVersion: 1, indexInLedger: 200}}

@@ -1,6 +1,8 @@
 import assert from 'assert-diff'
-import {assertResultMatch, TestSuite} from '../../utils'
+
 import responses from '../../fixtures/responses'
+import {assertResultMatch, TestSuite} from '../../utils'
+
 const {getLedger: RESPONSE_FIXTURES} = responses
 
 /**
@@ -22,7 +24,7 @@ export default <TestSuite>{
   },
   'future ledger version': async (client) => {
     const response = await client.getLedger({ledgerVersion: 14661789})
-    assert(!!response)
+    assert(Boolean(response))
   },
   'with state as hashes': async (client) => {
     const request = {

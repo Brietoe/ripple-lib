@@ -1,6 +1,7 @@
 import requests from '../../fixtures/requests'
 import responses from '../../fixtures/responses'
 import {assertRejects, assertResultMatch, TestSuite} from '../../utils'
+
 const instructionsWithMaxLedgerVersionOffset = {maxLedgerVersionOffset: 100}
 
 /**
@@ -44,10 +45,9 @@ export default <TestSuite>{
   },
 
   'invalid': async (client, address) => {
-    const request = Object.assign(
-      {},
-      requests.prepareOrderCancellation.withMemos
-    )
+    const request = {
+      ...requests.prepareOrderCancellation.withMemos
+    }
     delete request.orderSequence // Make invalid
 
     await assertRejects(

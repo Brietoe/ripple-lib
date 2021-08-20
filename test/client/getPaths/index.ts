@@ -1,8 +1,10 @@
 import assert from 'assert-diff'
-import {assertResultMatch, assertRejects, TestSuite} from '../../utils'
+
+import addresses from '../../fixtures/addresses.json'
 import requests from '../../fixtures/requests'
 import responses from '../../fixtures/responses'
-import addresses from '../../fixtures/addresses.json'
+import {assertResultMatch, assertRejects, TestSuite} from '../../utils'
+
 const {getPaths: REQUEST_FIXTURES} = requests
 const {getPaths: RESPONSE_FIXTURES} = responses
 

@@ -1,7 +1,9 @@
 import * as assert from 'assert'
-import {parseTimestamp,parseMemos} from './utils'
+
 import {removeUndefined} from '../../common'
+
 import parseAmount from './amount'
+import {parseTimestamp, parseMemos} from './utils'
 
 function parsePaymentChannelFund(tx: any): object {
   assert.ok(tx.TransactionType === 'PaymentChannelFund')

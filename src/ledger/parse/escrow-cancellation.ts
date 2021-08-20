@@ -1,6 +1,8 @@
 import * as assert from 'assert'
-import {parseMemos} from './utils'
+
 import {removeUndefined} from '../../common'
+
+import {parseMemos} from './utils'
 
 function parseEscrowCancellation(tx: any): object {
   assert.ok(tx.TransactionType === 'EscrowCancel')

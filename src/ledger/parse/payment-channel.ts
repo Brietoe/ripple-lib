@@ -1,8 +1,9 @@
-import {parseTimestamp, parseMemos} from './utils'
 import {removeUndefined, dropsToXrp} from '../../common'
 import {PayChannelLedgerEntry} from '../../common/types/objects'
 
-export type FormattedPaymentChannel = {
+import {parseTimestamp, parseMemos} from './utils'
+
+export interface FormattedPaymentChannel {
   account: string
   amount: string
   balance: string

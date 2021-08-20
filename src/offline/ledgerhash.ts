@@ -1,10 +1,11 @@
 import * as _ from 'lodash'
+
+import * as common from '../common'
 import {
   computeLedgerHash,
   computeTransactionTreeHash,
   computeStateTreeHash
 } from '../common/hashes'
-import * as common from '../common'
 
 function convertLedgerHeader(header): any {
   return {
@@ -59,13 +60,12 @@ function computeTransactionHash(
     return ledger.transactionHash
   }
   const txs = transactions.map((tx) => {
-    const mergeTx = Object.assign({}, _.omit(tx, 'tx'), tx.tx || {})
+    const mergeTx = {..._.omit(tx, 'tx'), ...(tx.tx || {})}
     // rename `meta` back to `metaData`
-    const renameMeta = Object.assign(
-      {},
-      _.omit(mergeTx, 'meta'),
-      tx.meta ? {metaData: tx.meta} : {}
-    )
+    const renameMeta = {
+      ..._.omit(mergeTx, 'meta'),
+      ...(tx.meta ? {metaData: tx.meta} : {})
+    }
     return renameMeta
   })
   const transactionHash = computeTransactionTreeHash(txs)
@@ -104,7 +104,7 @@ function computeStateHash(ledger, options: ComputeLedgerHeaderHashOptions) {
   return stateHash
 }
 
-export type ComputeLedgerHeaderHashOptions = {
+export interface ComputeLedgerHeaderHashOptions {
   computeTreeHashes?: boolean
 }
 
@@ -116,7 +116,7 @@ function computeLedgerHeaderHash(
     transactionHash: computeTransactionHash(ledger, options),
     stateHash: computeStateHash(ledger, options)
   }
-  return hashLedgerHeader(Object.assign({}, ledger, subhashes))
+  return hashLedgerHeader({...ledger, ...subhashes})
 }
 
 export default computeLedgerHeaderHash

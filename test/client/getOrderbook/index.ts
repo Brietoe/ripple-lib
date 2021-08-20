@@ -1,12 +1,13 @@
 import assert from 'assert-diff'
-import responses from '../../fixtures/responses'
-import requests from '../../fixtures/requests'
-import {TestSuite, assertResultMatch, assertRejects} from '../../utils'
 import BigNumber from 'bignumber.js'
+
+import requests from '../../fixtures/requests'
+import responses from '../../fixtures/responses'
+import {TestSuite, assertResultMatch, assertRejects} from '../../utils'
 
 function checkSortingOfOrders(orders) {
   let previousRate = '0'
-  for (var i = 0; i < orders.length; i++) {
+  for (let i = 0; i < orders.length; i++) {
     const order = orders[i]
     let rate
 
@@ -28,10 +29,7 @@ function checkSortingOfOrders(orders) {
     }
     assert(
       new BigNumber(rate).isGreaterThanOrEqualTo(previousRate),
-      'Rates must be sorted from least to greatest: ' +
-        rate +
-        ' should be >= ' +
-        previousRate
+      `Rates must be sorted from least to greatest: ${rate} should be >= ${previousRate}`
     )
     previousRate = rate
   }
@@ -56,7 +54,7 @@ export default <TestSuite>{
   'invalid options': async (client, address) => {
     assertRejects(
       client.getOrderbook(address, requests.getOrderbook.normal, {
-        // @ts-ignore
+        // @ts-expect-error
         invalid: 'options'
       }),
       client.errors.ValidationError
@@ -71,7 +69,10 @@ export default <TestSuite>{
     assertResultMatch(response, responses.getOrderbook.withXRP, 'getOrderbook')
   },
 
-  'sample XRP/JPY book has orders sorted correctly': async (client, address) => {
+  'sample XRP/JPY book has orders sorted correctly': async (
+    client,
+    address
+  ) => {
     const orderbookInfo = {
       base: {
         // the first currency in pair
@@ -88,7 +89,10 @@ export default <TestSuite>{
     checkSortingOfOrders(response.asks)
   },
 
-  'sample USD/XRP book has orders sorted correctly': async (client, address) => {
+  'sample USD/XRP book has orders sorted correctly': async (
+    client,
+    address
+  ) => {
     const orderbookInfo = {
       counter: {currency: 'XRP'},
       base: {
@@ -103,7 +107,10 @@ export default <TestSuite>{
   },
 
   // WARNING: This test fails to catch the sorting bug, issue #766
-  'sorted so that best deals come first [bad test]': async (client, address) => {
+  'sorted so that best deals come first [bad test]': async (
+    client,
+    address
+  ) => {
     const response = await client.getOrderbook(
       address,
       requests.getOrderbook.normal

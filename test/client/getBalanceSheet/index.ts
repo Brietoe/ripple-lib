@@ -12,7 +12,7 @@ export default <TestSuite>{
 
   'getBalanceSheet - invalid options': async (client, address) => {
     await assertRejects(
-      // @ts-ignore - This is intentionally invalid
+      // @ts-expect-error - This is intentionally invalid
       client.getBalanceSheet(address, {invalid: 'options'}),
       client.errors.ValidationError
     )

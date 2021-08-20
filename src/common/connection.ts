@@ -1,8 +1,10 @@
-import * as _ from 'lodash'
 import {EventEmitter} from 'events'
 import {parse as parseUrl} from 'url'
+
+import * as _ from 'lodash'
 import WebSocket from 'ws'
-import RangeSet from './rangeset'
+
+import {ExponentialBackoff} from './backoff'
 import {
   RippledError,
   DisconnectedError,
@@ -13,7 +15,7 @@ import {
   RippledNotInitializedError,
   RippleError
 } from './errors'
-import {ExponentialBackoff} from './backoff'
+import RangeSet from './rangeset'
 
 /**
  * ConnectionOptions is the configuration for the Connection class.
@@ -40,7 +42,7 @@ export type ConnectionUserOptions = Partial<ConnectionOptions>
 
 /**
  * Ledger Stream Message
- * https://xrpl.org/subscribe.html#ledger-stream
+ * https://xrpl.org/subscribe.html#ledger-stream.
  */
 interface LedgerStreamMessage {
   type?: 'ledgerClosed' // not present in initial `subscribe` response
@@ -55,16 +57,19 @@ interface LedgerStreamMessage {
   validated_ledgers?: string
 }
 
-/**
- * Represents an intentionally triggered web-socket disconnect code.
- * WebSocket spec allows 4xxx codes for app/library specific codes.
- * See: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
- **/
+//
+// Represents an intentionally triggered web-socket disconnect code.
+// WebSocket spec allows 4xxx codes for app/library specific codes.
+// See: https://developer.mozilla.org/en-US/docs/Web/API/CloseEvent
+//
 const INTENTIONAL_DISCONNECT_CODE = 4000
 
 /**
  * Create a new websocket given your URL and optional proxy/certificate
  * configuration.
+ *
+ * @param url
+ * @param config
  */
 function createWebSocket(url: string, config: ConnectionOptions): WebSocket {
   const options: WebSocket.ClientOptions = {}
@@ -83,7 +88,7 @@ function createWebSocket(url: string, config: ConnectionOptions): WebSocket {
       },
       (value) => value == null
     )
-    const proxyOptions = Object.assign({}, parsedProxyURL, proxyOverrides)
+    const proxyOptions = {...parsedProxyURL, ...proxyOverrides}
     let HttpsProxyAgent
     try {
       HttpsProxyAgent = require('https-proxy-agent')
@@ -105,7 +110,7 @@ function createWebSocket(url: string, config: ConnectionOptions): WebSocket {
     },
     (value) => value == null
   )
-  const websocketOptions = Object.assign({}, options, optionsOverrides)
+  const websocketOptions = {...options, ...optionsOverrides}
   const websocket = new WebSocket(url, null, websocketOptions)
   // we will have a listener for each outstanding request,
   // so we have to raise the limit (the default is 10)
@@ -116,7 +121,10 @@ function createWebSocket(url: string, config: ConnectionOptions): WebSocket {
 }
 
 /**
- * ws.send(), but promisified.
+ * Ws.send(), but promisified.
+ *
+ * @param ws
+ * @param message
  */
 function websocketSendAsync(ws: WebSocket, message: string) {
   return new Promise<void>((resolve, reject) => {
@@ -139,10 +147,12 @@ class LedgerHistory {
   feeRef: null | number = null
   latestVersion: null | number = null
   reserveBase: null | number = null
-  private availableVersions = new RangeSet()
+  private readonly availableVersions = new RangeSet()
 
   /**
    * Returns true if the given version exists.
+   *
+   * @param version
    */
   hasVersion(version: number): boolean {
     return this.availableVersions.containsValue(version)
@@ -150,6 +160,9 @@ class LedgerHistory {
 
   /**
    * Returns true if the given range of versions exist (inclusive).
+   *
+   * @param lowVersion
+   * @param highVersion
    */
   hasVersions(lowVersion: number, highVersion: number): boolean {
     return this.availableVersions.containsRange(lowVersion, highVersion)
@@ -160,6 +173,8 @@ class LedgerHistory {
    * format lets you pass in any valid rippled ledger response data, regardless
    * of whether ledger history data exists or not. If relevant ledger data
    * is found, we'll update our history (ex: from a "ledgerClosed" event).
+   *
+   * @param ledgerMessage
    */
   update(ledgerMessage: LedgerStreamMessage) {
     // type: ignored
@@ -186,10 +201,10 @@ class LedgerHistory {
  * after-the-fact.
  */
 class ConnectionManager {
-  private promisesAwaitingConnection: {
+  private promisesAwaitingConnection: Array<{
     resolve: Function
     reject: Function
-  }[] = []
+  }> = []
 
   resolveAllAwaiting() {
     this.promisesAwaitingConnection.map(({resolve}) => resolve())
@@ -216,11 +231,11 @@ class ConnectionManager {
  */
 class RequestManager {
   private nextId = 0
-  private promisesAwaitingResponse: {
+  private promisesAwaitingResponse: Array<{
     resolve: Function
     reject: Function
     timer: NodeJS.Timeout
-  }[] = []
+  }> = []
 
   cancel(id: number) {
     const {timer} = this.promisesAwaitingResponse[id]
@@ -252,6 +267,9 @@ class RequestManager {
    * Creates a new WebSocket request. This sets up a timeout timer to catch
    * hung responses, and a promise that will resolve with the response once
    * the response is seen & handled.
+   *
+   * @param data
+   * @param timeout
    */
   createRequest(data: any, timeout: number): [number, string, Promise<any>] {
     const newId = this.nextId++
@@ -275,6 +293,8 @@ class RequestManager {
    * Handle a "response" (any message with `{type: "response"}`). Responses
    * match to the earlier request handlers, and resolve/reject based on the
    * data received.
+   *
+   * @param data
    */
   handleResponse(data: any) {
     if (!Number.isInteger(data.id) || data.id < 0) {
@@ -303,22 +323,24 @@ class RequestManager {
 /**
  * The main Connection class. Responsible for connecting to & managing
  * an active WebSocket connection to a XRPL node.
+ *
+ * @param errorOrCode
  */
 export class Connection extends EventEmitter {
-  private _url: string
+  private readonly _url: string
   private _ws: null | WebSocket = null
   private _reconnectTimeoutID: null | NodeJS.Timeout = null
   private _heartbeatIntervalID: null | NodeJS.Timeout = null
-  private _retryConnectionBackoff = new ExponentialBackoff({
+  private readonly _retryConnectionBackoff = new ExponentialBackoff({
     min: 100,
     max: 60 * 1000
   })
 
-  private _trace: (id: string, message: string) => void = () => {}
-  private _config: ConnectionOptions
-  private _ledger: LedgerHistory = new LedgerHistory()
-  private _requestManager = new RequestManager()
-  private _connectionManager = new ConnectionManager()
+  private readonly _trace: (id: string, message: string) => void = () => {}
+  private readonly _config: ConnectionOptions
+  private readonly _ledger: LedgerHistory = new LedgerHistory()
+  private readonly _requestManager = new RequestManager()
+  private readonly _connectionManager = new ConnectionManager()
 
   constructor(url?: string, options: ConnectionUserOptions = {}) {
     super()
@@ -331,7 +353,7 @@ export class Connection extends EventEmitter {
     }
     if (typeof options.trace === 'function') {
       this._trace = options.trace
-    } else if (options.trace === true) {
+    } else if (options.trace) {
       this._trace = console.log
     }
   }
@@ -372,11 +394,11 @@ export class Connection extends EventEmitter {
     return this._ws !== null
   }
 
-  private _clearHeartbeatInterval = () => {
+  private readonly _clearHeartbeatInterval = () => {
     clearInterval(this._heartbeatIntervalID)
   }
 
-  private _startHeartbeatInterval = () => {
+  private readonly _startHeartbeatInterval = () => {
     this._clearHeartbeatInterval()
     this._heartbeatIntervalID = setInterval(
       () => this._heartbeat(),
@@ -388,7 +410,7 @@ export class Connection extends EventEmitter {
    * A heartbeat is just a "ping" command, sent on an interval.
    * If this succeeds, we're good. If it fails, disconnect so that the consumer can reconnect, if desired.
    */
-  private _heartbeat = () => {
+  private readonly _heartbeat = () => {
     return this.request({command: 'ping'}).catch(() => {
       return this.reconnect().catch((error) => {
         this.emit('error', 'reconnect', error.message, error)
@@ -432,7 +454,9 @@ export class Connection extends EventEmitter {
     this._ledger.update(data)
   }
 
-  private _onConnectionFailed = (errorOrCode: Error | number | undefined) => {
+  private readonly _onConnectionFailed = (
+    errorOrCode: Error | number | undefined
+  ) => {
     if (this._ws) {
       this._ws.removeAllListeners()
       this._ws.on('error', () => {
@@ -584,27 +608,30 @@ export class Connection extends EventEmitter {
 
   async getFeeBase(): Promise<number> {
     await this._waitForReady()
-    return this._ledger.feeBase!
+    return this._ledger.feeBase
   }
 
   async getFeeRef(): Promise<number> {
     await this._waitForReady()
-    return this._ledger.feeRef!
+    return this._ledger.feeRef
   }
 
   async getLedgerVersion(): Promise<number> {
     await this._waitForReady()
-    return this._ledger.latestVersion!
+    return this._ledger.latestVersion
   }
 
   async getReserveBase(): Promise<number> {
     await this._waitForReady()
-    return this._ledger.reserveBase!
+    return this._ledger.reserveBase
   }
 
   /**
    * Returns true if the given range of ledger versions exist in history
    * (inclusive).
+   *
+   * @param lowLedgerVersion
+   * @param highLedgerVersion
    */
   async hasLedgerVersions(
     lowLedgerVersion: number,
@@ -621,6 +648,8 @@ export class Connection extends EventEmitter {
 
   /**
    * Returns true if the given ledger version exists in history.
+   *
+   * @param ledgerVersion
    */
   async hasLedgerVersion(ledgerVersion: number): Promise<boolean> {
     await this._waitForReady()
@@ -644,9 +673,9 @@ export class Connection extends EventEmitter {
   }
 
   /**
-   * Get the Websocket connection URL
+   * Get the Websocket connection URL.
    *
-   * @returns The Websocket connection URL
+   * @returns The Websocket connection URL.
    */
   getUrl(): string {
     return this._url

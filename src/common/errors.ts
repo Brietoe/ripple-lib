@@ -1,12 +1,21 @@
+/* eslint-disable max-classes-per-file -- Classes extend RippleError */
+
 import {inspect} from 'util'
+
 import * as browserHacks from './browser-hacks'
 
 class RippleError extends Error {
-  name: string
-  message: string
-  data?: any
+  public name: string
+  public message: string
+  private readonly data?: any
 
-  constructor(message = '', data?: any) {
+  /**
+   * Construct a RippleError.
+   *
+   * @param message - Message accompanying the error.
+   * @param data - Any data pertainent to the error.
+   */
+  public constructor(message = '') {
     super(message)
 
     this.name = browserHacks.getConstructorName(this)
@@ -17,19 +26,28 @@ class RippleError extends Error {
     }
   }
 
-  toString() {
-    let result = '[' + this.name + '(' + this.message
+  /**
+   * Returns the string representation of a RippleError.
+   *
+   * @returns Stringified error message.
+   */
+  public toString(): string {
+    let result = `[${this.name}(${this.message}`
     if (this.data) {
-      result += ', ' + inspect(this.data)
+      result += `, ${inspect(this.data)}`
     }
     result += ')]'
     return result
   }
 
-  /* console.log in node uses util.inspect on object, and util.inspect allows
-  us to customize its output:
-  https://nodejs.org/api/util.html#util_custom_inspect_function_on_objects */
-  inspect() {
+  /**
+   * Console.log in node uses util.inspect on object, and util.inspect allows
+   * us to customize its output:
+   * https://nodejs.org/api/util.html#util_custom_inspect_function_on_objects.
+   *
+   * @returns String representation of RippleError.
+   */
+  public inspect(): string {
     return this.toString()
   }
 }
@@ -57,19 +75,34 @@ class ValidationError extends RippleError {}
 class XRPLFaucetError extends RippleError {}
 
 class NotFoundError extends RippleError {
-  constructor(message = 'Not found') {
+  /**
+   * Construct a NotFoundError.
+   *
+   * @param message - Message describing the NotFoundError with.
+   */
+  public constructor(message = 'Not found') {
     super(message)
   }
 }
 
 class MissingLedgerHistoryError extends RippleError {
-  constructor(message?: string) {
+  /**
+   * Construct a MissingLedgerHistoryError.
+   *
+   * @param message - Message describing the MissingLedgerHistoryError.
+   */
+  public constructor(message?: string) {
     super(message || 'Server is missing ledger history in the specified range')
   }
 }
 
 class PendingLedgerVersionError extends RippleError {
-  constructor(message?: string) {
+  /**
+   * Construct a PendingLedgerVersionError.
+   *
+   * @param message - Message describing the PendingLedgerVersionError.
+   */
+  public constructor(message?: string) {
     super(
       message ||
         "maxLedgerVersion is greater than server's most recent" +

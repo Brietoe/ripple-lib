@@ -1,14 +1,16 @@
 import * as _ from 'lodash'
 import binary from 'ripple-binary-codec'
+
+import {Client} from '..'
+import {validate, errors, Connection, ensureClassicAddress} from '../common'
 import {computeTransactionHash} from '../common/hashes'
-import * as utils from './utils'
+import {FormattedTransactionType} from '../transaction/types'
+
 import parseTransaction from './parse/transaction'
 import getTransaction from './transaction'
-import {validate, errors, Connection, ensureClassicAddress} from '../common'
-import {FormattedTransactionType} from '../transaction/types'
-import {Client} from '..'
+import * as utils from './utils'
 
-export type TransactionsOptions = {
+export interface TransactionsOptions {
   start?: string
   limit?: number
   minLedgerVersion?: number
@@ -17,20 +19,20 @@ export type TransactionsOptions = {
   excludeFailures?: boolean
   initiated?: boolean
   counterparty?: string
-  types?: Array<string>
+  types?: string[]
   includeRawTransactions?: boolean
   binary?: boolean
   startTx?: FormattedTransactionType
 }
 
-export type GetTransactionsResponse = Array<FormattedTransactionType>
+export type GetTransactionsResponse = FormattedTransactionType[]
 
 function parseBinaryTransaction(transaction) {
   const tx = binary.decode(transaction.tx_blob)
   tx.hash = computeTransactionHash(tx)
   tx.ledger_index = transaction.ledger_index
   return {
-    tx: tx,
+    tx,
     meta: binary.decode(transaction.meta),
     validated: transaction.validated
   }
@@ -40,7 +42,7 @@ function parseAccountTxTransaction(tx, includeRawTransaction: boolean) {
   const _tx = tx.tx_blob ? parseBinaryTransaction(tx) : tx
   // rippled uses a different response format for 'account_tx' than 'tx'
   return parseTransaction(
-    Object.assign({}, _tx.tx, {meta: _tx.meta, validated: _tx.validated}),
+    {..._tx.tx, meta: _tx.meta, validated: _tx.validated},
     includeRawTransaction
   )
 }
@@ -72,10 +74,10 @@ function transactionFilter(
   if (filters.types && !filters.types.includes(tx.type)) {
     return false
   }
-  if (filters.initiated === true && tx.address !== address) {
+  if (filters.initiated && tx.address !== address) {
     return false
   }
-  if (filters.initiated === false && tx.address === address) {
+  if (!filters.initiated && tx.address === address) {
     return false
   }
   if (filters.counterparty && !counterpartyFilter(filters, tx)) {
@@ -130,7 +132,7 @@ function getAccountTx(
     forward: options.earliestFirst,
     binary: options.binary,
     limit: utils.clamp(limit, 10, 400),
-    marker: marker
+    marker
   }
 
   return connection
@@ -150,9 +152,11 @@ function checkForLedgerGaps(
   // the range of ledgers spanned by those transactions
   if (options.limit && transactions.length === options.limit) {
     if (options.earliestFirst) {
-      maxLedgerVersion = transactions[transactions.length-1]!.outcome.ledgerVersion
+      maxLedgerVersion =
+        transactions[transactions.length - 1]!.outcome.ledgerVersion
     } else {
-      minLedgerVersion = transactions[transactions.length-1]!.outcome.ledgerVersion
+      minLedgerVersion =
+        transactions[transactions.length - 1]!.outcome.ledgerVersion
     }
   }
 
@@ -208,11 +212,11 @@ function getTransactions(
       const bound = options.earliestFirst
         ? {minLedgerVersion: ledgerVersion}
         : {maxLedgerVersion: ledgerVersion}
-      const startOptions = Object.assign({}, defaults, options, {startTx: tx}, bound)
+      const startOptions = {...defaults, ...options, startTx: tx, ...bound}
       return getTransactionsInternal(this.connection, address, startOptions)
     })
   }
-  const newOptions = Object.assign({}, defaults, options)
+  const newOptions = {...defaults, ...options}
   return getTransactionsInternal(this.connection, address, newOptions)
 }
 

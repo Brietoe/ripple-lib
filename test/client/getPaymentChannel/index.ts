@@ -1,5 +1,6 @@
 import responses from '../../fixtures/responses'
 import {assertRejects, assertResultMatch, TestSuite} from '../../utils'
+
 const {getPaymentChannel: RESPONSE_FIXTURES} = responses
 
 /**

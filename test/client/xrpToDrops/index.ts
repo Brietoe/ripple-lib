@@ -1,5 +1,6 @@
 import assert from 'assert-diff'
 import BigNumber from 'bignumber.js'
+
 import {TestSuite} from '../../utils'
 
 /**

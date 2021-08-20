@@ -1,6 +1,7 @@
 import requests from '../../fixtures/requests'
 import responses from '../../fixtures/responses'
 import {assertResultMatch, TestSuite} from '../../utils'
+
 const instructionsWithMaxLedgerVersionOffset = {maxLedgerVersionOffset: 100}
 
 export const config = {

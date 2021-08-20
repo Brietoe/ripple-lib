@@ -1,4 +1,5 @@
 import assert from 'assert-diff'
+
 import {ExponentialBackoff} from '../src/common/backoff'
 
 describe('ExponentialBackoff', function () {

@@ -1,4 +1,5 @@
 import assert from 'assert-diff'
+
 import responses from '../../fixtures/responses'
 import {assertResultMatch, TestSuite, assertRejects} from '../../utils'
 
@@ -39,6 +40,9 @@ export default <TestSuite>{
 
   'getServerInfo - offline': async (client, address) => {
     await client.disconnect()
-    return assertRejects(client.getServerInfo(), client.errors.NotConnectedError)
+    return assertRejects(
+      client.getServerInfo(),
+      client.errors.NotConnectedError
+    )
   }
 }

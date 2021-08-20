@@ -1,7 +1,9 @@
 import assert from 'assert-diff'
+
 import requests from '../../fixtures/requests'
 import responses from '../../fixtures/responses'
 import {assertResultMatch, TestSuite} from '../../utils'
+
 const instructionsWithMaxLedgerVersionOffset = {maxLedgerVersionOffset: 100}
 
 /**
@@ -150,8 +152,9 @@ export default <TestSuite>{
         instructionsWithMaxLedgerVersionOffset
       )
       throw new Error(
-        'Expected method to reject. Prepared transaction: ' +
-          JSON.stringify(response)
+        `Expected method to reject. Prepared transaction: ${JSON.stringify(
+          response
+        )}`
       )
     } catch (err) {
       assert.strictEqual(
@@ -209,9 +212,7 @@ export default <TestSuite>{
   },
   'invalid': async (client, address) => {
     // domain must be a string
-    const settings = Object.assign({}, requests.prepareSettings.domain, {
-      domain: 123
-    })
+    const settings = {...requests.prepareSettings.domain, domain: 123}
     const localInstructions = {
       signersCount: 4,
       ...instructionsWithMaxLedgerVersionOffset
@@ -224,8 +225,9 @@ export default <TestSuite>{
         localInstructions
       )
       throw new Error(
-        'Expected method to reject. Prepared transaction: ' +
-          JSON.stringify(response)
+        `Expected method to reject. Prepared transaction: ${JSON.stringify(
+          response
+        )}`
       )
     } catch (err) {
       assert.strictEqual(

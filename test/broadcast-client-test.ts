@@ -1,10 +1,13 @@
-import _ from 'lodash'
 import assert from 'assert-diff'
-import setupClient from './setup-client'
+import _ from 'lodash'
+
+import {Client} from 'xrpl-local'
+
 import responses from './fixtures/responses'
 import ledgerClosed from './fixtures/rippled/ledger-close.json'
-import {Client} from 'xrpl-local'
+import setupClient from './setup-client'
 import {ignoreWebSocketDisconnect} from './utils'
+
 const schemaValidator = Client._PRIVATE.schemaValidator
 
 const TIMEOUT = 20000
@@ -28,7 +31,7 @@ describe('ClientBroadcast', function () {
 
   it('base', function () {
     const expected = {request_server_info: 1}
-    this.mocks.forEach((mock) => mock.expect(Object.assign({}, expected)))
+    this.mocks.forEach((mock) => mock.expect({...expected}))
     assert(this.client.isConnected())
     return this.client
       .getServerInfo()
@@ -40,7 +43,7 @@ describe('ClientBroadcast', function () {
     this.client.on('ledger', () => {
       gotLedger++
     })
-    const ledgerNext = Object.assign({}, ledgerClosed)
+    const ledgerNext = {...ledgerClosed}
     ledgerNext.ledger_index++
 
     this.client._clients.forEach((client) =>

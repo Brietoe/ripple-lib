@@ -19,7 +19,7 @@ export default <TestSuite>{
 
   'getAccountInfo - invalid options': async (client, address) => {
     await assertRejects(
-      // @ts-ignore - This is intentionally invalid
+      // @ts-expect-error - This is intentionally invalid
       client.getAccountInfo(address, {invalid: 'options'}),
       client.errors.ValidationError
     )

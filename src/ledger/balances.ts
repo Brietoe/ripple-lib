@@ -1,17 +1,17 @@
-import * as utils from './utils'
-import {validate, ensureClassicAddress} from '../common'
-import {Connection} from '../common'
-import {GetTrustlinesOptions} from './trustlines'
-import {FormattedTrustline} from '../common/types/objects/trustlines'
 import {Client} from '..'
+import {validate, ensureClassicAddress, Connection} from '../common'
+import {FormattedTrustline} from '../common/types/objects/trustlines'
 
-export type Balance = {
+import {GetTrustlinesOptions} from './trustlines'
+import * as utils from './utils'
+
+export interface Balance {
   value: string
   currency: string
   counterparty?: string
 }
 
-export type GetBalances = Array<Balance>
+export type GetBalances = Balance[]
 
 function getTrustlineBalanceAmount(trustline: FormattedTrustline) {
   return {
@@ -64,11 +64,9 @@ function getBalances(
   address = ensureClassicAddress(address)
 
   return Promise.all([
-    getLedgerVersionHelper(
-      this.connection,
-      options.ledgerVersion
-    ).then((ledgerVersion) =>
-      utils.getXRPBalance(this.connection, address, ledgerVersion)
+    getLedgerVersionHelper(this.connection, options.ledgerVersion).then(
+      (ledgerVersion) =>
+        utils.getXRPBalance(this.connection, address, ledgerVersion)
     ),
     this.getTrustlines(address, options)
   ]).then((results) =>

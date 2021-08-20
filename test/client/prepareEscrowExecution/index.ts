@@ -1,6 +1,7 @@
-import {TestSuite, assertRejects, assertResultMatch} from '../../utils'
 import requests from '../../fixtures/requests'
 import responses from '../../fixtures/responses'
+import {TestSuite, assertRejects, assertResultMatch} from '../../utils'
+
 const instructionsWithMaxLedgerVersionOffset = {maxLedgerVersionOffset: 100}
 
 /**

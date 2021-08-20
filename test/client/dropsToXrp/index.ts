@@ -1,6 +1,7 @@
 import assert from 'assert-diff'
-import {TestSuite} from '../../utils'
 import BigNumber from 'bignumber.js'
+
+import {TestSuite} from '../../utils'
 
 /**
  * Every test suite exports their tests in the default object.

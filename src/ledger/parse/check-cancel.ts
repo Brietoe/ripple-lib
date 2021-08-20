@@ -1,8 +1,10 @@
 import * as assert from 'assert'
+
 import {removeUndefined} from '../../common'
+
 import {parseMemos} from './utils'
 
-export type FormattedCheckCancel = {
+export interface FormattedCheckCancel {
   // ID of the Check ledger object to cancel.
   checkID: string
 }

@@ -1,10 +1,12 @@
 import * as _ from 'lodash'
-import {validate} from '../common'
-import {FormattedAccountOrder, parseAccountOrder} from './parse/account-order'
+
 import {Client} from '..'
+import {validate} from '../common'
 import {AccountOffersResponse} from '../common/types/commands'
 
-export type GetOrdersOptions = {
+import {FormattedAccountOrder, parseAccountOrder} from './parse/account-order'
+
+export interface GetOrdersOptions {
   limit?: number
   ledgerVersion?: number
 }

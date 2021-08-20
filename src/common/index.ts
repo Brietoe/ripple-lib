@@ -1,8 +1,9 @@
+import {xAddressToClassicAddress, isValidXAddress} from 'ripple-address-codec'
+
 import * as constants from './constants'
 import * as errors from './errors'
-import * as validate from './validate'
 import * as serverInfo from './serverinfo'
-import {xAddressToClassicAddress, isValidXAddress} from 'ripple-address-codec'
+import * as validate from './validate'
 
 export function ensureClassicAddress(account: string): string {
   if (isValidXAddress(account)) {
@@ -19,9 +20,8 @@ export function ensureClassicAddress(account: string): string {
 
     // For rippled requests that use an account, always use a classic address.
     return classicAddress
-  } else {
-    return account
   }
+  return account
 }
 
 export {constants, errors, validate, serverInfo}

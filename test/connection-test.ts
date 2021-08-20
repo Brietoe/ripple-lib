@@ -1,10 +1,14 @@
-import _ from 'lodash'
 import net from 'net'
+
 import assert from 'assert-diff'
-import setupClient from './setup-client'
+import _ from 'lodash'
+
 import {Client} from 'xrpl-local'
+
 import ledgerClose from './fixtures/rippled/ledger-close.json'
+import setupClient from './setup-client'
 import {ignoreWebSocketDisconnect} from './utils'
+
 const utils = Client._PRIVATE.ledgerUtils
 
 const TIMEOUT = 200000 // how long before each test case times out
@@ -53,7 +57,7 @@ describe('Connection', function () {
       const messages = []
       console.log = (id, message) => messages.push([id, message])
       const connection: any = new utils.common.Connection('url', {trace: false})
-      connection._ws = {send: function () {}}
+      connection._ws = {send() {}}
       connection.request(mockedRequestData)
       connection._onMessage(mockedResponse)
       assert.deepEqual(messages, [])
@@ -63,7 +67,7 @@ describe('Connection', function () {
       const messages = []
       console.log = (id, message) => messages.push([id, message])
       const connection: any = new utils.common.Connection('url', {trace: true})
-      connection._ws = {send: function () {}}
+      connection._ws = {send() {}}
       connection.request(mockedRequestData)
       connection._onMessage(mockedResponse)
       assert.deepEqual(messages, expectedMessages)
@@ -74,7 +78,7 @@ describe('Connection', function () {
       const connection: any = new utils.common.Connection('url', {
         trace: (id, message) => messages.push([id, message])
       })
-      connection._ws = {send: function () {}}
+      connection._ws = {send() {}}
       connection.request(mockedRequestData)
       connection._onMessage(mockedResponse)
       assert.deepEqual(messages, expectedMessages)
@@ -120,7 +124,7 @@ describe('Connection', function () {
       })
 
       const options = {
-        proxy: 'ws://localhost:' + port,
+        proxy: `ws://localhost:${port}`,
         authorization: 'authorization',
         trustedCertificates: ['path/to/pem']
       }
@@ -158,7 +162,7 @@ describe('Connection', function () {
   it('should throw NotConnectedError if server not responding ', function (done) {
     if (isBrowser) {
       const phantomTest = /PhantomJS/
-      if (phantomTest.test(navigator.userAgent)) {
+      if (navigator.userAgent.includes('PhantomJS')) {
         // inside PhantomJS this one just hangs, so skip as not very relevant
         done()
         return
@@ -272,7 +276,7 @@ describe('Connection', function () {
     it('reconnect on several unexpected close', function (done) {
       if (isBrowser) {
         const phantomTest = /PhantomJS/
-        if (phantomTest.test(navigator.userAgent)) {
+        if (navigator.userAgent.includes('PhantomJS')) {
           // inside PhantomJS this one just hangs, so skip as not very relevant
           done()
           return
@@ -310,28 +314,18 @@ describe('Connection', function () {
           if (disconnectsCount !== num) {
             done(
               new Error(
-                'disconnectsCount must be equal to ' +
-                  num +
-                  '(got ' +
-                  disconnectsCount +
-                  ' instead)'
+                `disconnectsCount must be equal to ${num}(got ${disconnectsCount} instead)`
               )
             )
           } else if (reconnectsCount !== num) {
             done(
               new Error(
-                'reconnectsCount must be equal to ' +
-                  num +
-                  ' (got ' +
-                  reconnectsCount +
-                  ' instead)'
+                `reconnectsCount must be equal to ${num} (got ${reconnectsCount} instead)`
               )
             )
           } else if (code !== 1006) {
             done(
-              new Error(
-                'disconnect must send code 1006 (got ' + code + ' instead)'
-              )
+              new Error(`disconnect must send code 1006 (got ${code} instead)`)
             )
           } else {
             done()
@@ -346,7 +340,7 @@ describe('Connection', function () {
   it('reconnect event on heartbeat failure', function (done) {
     if (isBrowser) {
       const phantomTest = /PhantomJS/
-      if (phantomTest.test(navigator.userAgent)) {
+      if (navigator.userAgent.includes('PhantomJS')) {
         // inside PhantomJS this one just hangs, so skip as not very relevant
         done()
         return
@@ -367,7 +361,7 @@ describe('Connection', function () {
   it('heartbeat failure and reconnect failure', function (done) {
     if (isBrowser) {
       const phantomTest = /PhantomJS/
-      if (phantomTest.test(navigator.userAgent)) {
+      if (navigator.userAgent.includes('PhantomJS')) {
         // inside PhantomJS this one just hangs, so skip as not very relevant
         done()
         return
@@ -402,7 +396,7 @@ describe('Connection', function () {
 
   it('should emit disconnected event with code 1006 (CLOSE_ABNORMAL)', function (done) {
     this.client.connection.once('error', (error) => {
-      done(new Error('should not throw error, got ' + String(error)))
+      done(new Error(`should not throw error, got ${String(error)}`))
     })
     this.client.connection.once('disconnected', (code) => {
       assert.strictEqual(code, 1006)
@@ -530,21 +524,23 @@ describe('Connection', function () {
   })
 
   it('propagates RippledError data', function (done) {
-    this.client.request('subscribe', {streams: 'validations'}).catch((error) => {
-      assert.strictEqual(error.name, 'RippledError')
-      assert.strictEqual(error.data.error, 'invalidParams')
-      assert.strictEqual(error.message, 'Invalid parameters.')
-      assert.strictEqual(error.data.error_code, 31)
-      assert.strictEqual(error.data.error_message, 'Invalid parameters.')
-      assert.deepEqual(error.data.request, {
-        command: 'subscribe',
-        id: 0,
-        streams: 'validations'
+    this.client
+      .request('subscribe', {streams: 'validations'})
+      .catch((error) => {
+        assert.strictEqual(error.name, 'RippledError')
+        assert.strictEqual(error.data.error, 'invalidParams')
+        assert.strictEqual(error.message, 'Invalid parameters.')
+        assert.strictEqual(error.data.error_code, 31)
+        assert.strictEqual(error.data.error_message, 'Invalid parameters.')
+        assert.deepEqual(error.data.request, {
+          command: 'subscribe',
+          id: 0,
+          streams: 'validations'
+        })
+        assert.strictEqual(error.data.status, 'error')
+        assert.strictEqual(error.data.type, 'response')
+        done()
       })
-      assert.strictEqual(error.data.status, 'error')
-      assert.strictEqual(error.data.type, 'response')
-      done()
-    })
   })
 
   it('unrecognized message type', function (done) {
@@ -586,8 +582,9 @@ describe('Connection', function () {
         (error) => {
           assert(
             error instanceof this.client.errors.RippledNotInitializedError,
-            'Must throw RippledNotInitializedError, got instead ' +
-              String(error)
+            `Must throw RippledNotInitializedError, got instead ${String(
+              error
+            )}`
           )
         }
       )

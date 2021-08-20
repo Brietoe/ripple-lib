@@ -2,13 +2,13 @@ import {Client, ClientOptions} from './client'
 
 class ClientBroadcast extends Client {
   ledgerVersion: number | undefined = undefined
-  private _clients: Client[]
+  private readonly _clients: Client[]
 
   constructor(servers, options: ClientOptions = {}) {
     super(options)
 
     const clients: Client[] = servers.map(
-      (server) => new Client(Object.assign({}, options, {server}))
+      (server) => new Client({...options, server})
     )
 
     // exposed for testing

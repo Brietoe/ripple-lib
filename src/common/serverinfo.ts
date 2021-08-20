@@ -1,15 +1,17 @@
-import * as _ from 'lodash'
-import {convertKeysFromSnakeCaseToCamelCase} from './utils'
 import BigNumber from 'bignumber.js'
+import * as _ from 'lodash'
+
 import {Client} from '..'
 
-export type GetServerInfoResponse = {
+import {convertKeysFromSnakeCaseToCamelCase} from './utils'
+
+export interface GetServerInfoResponse {
   buildVersion: string
   completeLedgers: string
   hostID: string
   ioLatencyMs: number
   load?: {
-    jobTypes: Array<object>
+    jobTypes: object[]
     threads: number
   }
   lastClose: {
@@ -34,8 +36,8 @@ export type GetServerInfoResponse = {
 }
 
 function renameKeys(object: Record<string, any>, mapping: Record<string, any>) {
-  Object.entries(mapping).forEach(entry => {
-    const [from, to] = entry;
+  Object.entries(mapping).forEach((entry) => {
+    const [from, to] = entry
     object[to] = object[from]
     delete object[from]
   })
@@ -52,9 +54,12 @@ function getServerInfo(this: Client): Promise<GetServerInfoResponse> {
         reserveIncXrp: 'reserveIncrementXRP',
         seq: 'ledgerVersion'
       })
-      info.validatedLedger.baseFeeXRP = info.validatedLedger.baseFeeXRP.toString()
-      info.validatedLedger.reserveBaseXRP = info.validatedLedger.reserveBaseXRP.toString()
-      info.validatedLedger.reserveIncrementXRP = info.validatedLedger.reserveIncrementXRP.toString()
+      info.validatedLedger.baseFeeXRP =
+        info.validatedLedger.baseFeeXRP.toString()
+      info.validatedLedger.reserveBaseXRP =
+        info.validatedLedger.reserveBaseXRP.toString()
+      info.validatedLedger.reserveIncrementXRP =
+        info.validatedLedger.reserveIncrementXRP.toString()
     }
     return info
   })

@@ -1,13 +1,15 @@
-import BigNumber from 'bignumber.js'
 import assert from 'assert-diff'
+import BigNumber from 'bignumber.js'
+
 import {Client} from 'xrpl-local'
+
 import requests from '../../fixtures/requests'
 import responses from '../../fixtures/responses'
 import {TestSuite} from '../../utils'
 
 function checkSortingOfOrders(orders) {
   let previousRate = '0'
-  for (var i = 0; i < orders.length; i++) {
+  for (let i = 0; i < orders.length; i++) {
     const order = orders[i]
     let rate
 
@@ -29,10 +31,7 @@ function checkSortingOfOrders(orders) {
     }
     assert(
       new BigNumber(rate).isGreaterThanOrEqualTo(previousRate),
-      'Rates must be sorted from least to greatest: ' +
-        rate +
-        ' should be >= ' +
-        previousRate
+      `Rates must be sorted from least to greatest: ${rate} should be >= ${previousRate}`
     )
     previousRate = rate
   }
@@ -73,14 +72,12 @@ export default <TestSuite>{
         taker: address
       })
     ]).then(([directOfferResults, reverseOfferResults]) => {
-      const directOffers = (directOfferResults
+      const directOffers = directOfferResults
         ? directOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
-      const reverseOffers = (reverseOfferResults
+        : [].flat()
+      const reverseOffers = reverseOfferResults
         ? reverseOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
+        : [].flat()
       const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
         ...directOffers,
         ...reverseOffers
@@ -116,14 +113,12 @@ export default <TestSuite>{
         taker: address
       })
     ]).then(([directOfferResults, reverseOfferResults]) => {
-      const directOffers = (directOfferResults
+      const directOffers = directOfferResults
         ? directOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
-      const reverseOffers = (reverseOfferResults
+        : [].flat()
+      const reverseOffers = reverseOfferResults
         ? reverseOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
+        : [].flat()
       const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
         ...directOffers,
         ...reverseOffers
@@ -132,7 +127,10 @@ export default <TestSuite>{
     })
   },
 
-  'sample XRP/JPY book has orders sorted correctly': async (client, address) => {
+  'sample XRP/JPY book has orders sorted correctly': async (
+    client,
+    address
+  ) => {
     const orderbookInfo = {
       base: {
         // the first currency in pair
@@ -162,14 +160,12 @@ export default <TestSuite>{
         taker: myAddress
       })
     ]).then(([directOfferResults, reverseOfferResults]) => {
-      const directOffers = (directOfferResults
+      const directOffers = directOfferResults
         ? directOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
-      const reverseOffers = (reverseOfferResults
+        : [].flat()
+      const reverseOffers = reverseOfferResults
         ? reverseOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
+        : [].flat()
       const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
         ...directOffers,
         ...reverseOffers
@@ -179,7 +175,10 @@ export default <TestSuite>{
     })
   },
 
-  'sample USD/XRP book has orders sorted correctly': async (client, address) => {
+  'sample USD/XRP book has orders sorted correctly': async (
+    client,
+    address
+  ) => {
     const orderbookInfo = {
       counter: {currency: 'XRP'},
       base: {
@@ -206,14 +205,12 @@ export default <TestSuite>{
         taker: myAddress
       })
     ]).then(([directOfferResults, reverseOfferResults]) => {
-      const directOffers = (directOfferResults
+      const directOffers = directOfferResults
         ? directOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
-      const reverseOffers = (reverseOfferResults
+        : [].flat()
+      const reverseOffers = reverseOfferResults
         ? reverseOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
+        : [].flat()
       const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
         ...directOffers,
         ...reverseOffers
@@ -253,14 +250,12 @@ export default <TestSuite>{
         taker: address
       })
     ]).then(([directOfferResults, reverseOfferResults]) => {
-      const directOffers = (directOfferResults
+      const directOffers = directOfferResults
         ? directOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
-      const reverseOffers = (reverseOfferResults
+        : [].flat()
+      const reverseOffers = reverseOfferResults
         ? reverseOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
+        : [].flat()
       const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
         ...directOffers,
         ...reverseOffers
@@ -308,14 +303,12 @@ export default <TestSuite>{
         taker: address
       })
     ]).then(([directOfferResults, reverseOfferResults]) => {
-      const directOffers = (directOfferResults
+      const directOffers = directOfferResults
         ? directOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
-      const reverseOffers = (reverseOfferResults
+        : [].flat()
+      const reverseOffers = reverseOfferResults
         ? reverseOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
+        : [].flat()
       const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
         ...directOffers,
         ...reverseOffers
@@ -362,14 +355,12 @@ export default <TestSuite>{
         taker: address
       })
     ]).then(([directOfferResults, reverseOfferResults]) => {
-      const directOffers = (directOfferResults
+      const directOffers = directOfferResults
         ? directOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
-      const reverseOffers = (reverseOfferResults
+        : [].flat()
+      const reverseOffers = reverseOfferResults
         ? reverseOfferResults.offers
-        : []
-      ).reduce((acc, res) => acc.concat(res), [])
+        : [].flat()
       const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
         ...directOffers,
         ...reverseOffers

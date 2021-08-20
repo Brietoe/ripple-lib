@@ -1,14 +1,16 @@
-import * as _ from 'lodash'
 import * as assert from 'assert'
+
+import * as _ from 'lodash'
+
+import {Client} from '..'
 import * as common from '../common'
 import {Connection} from '../common'
-import {FormattedTransactionType} from '../transaction/types'
 import {Issue} from '../common/types/objects'
-import {Client} from '..'
+import {FormattedTransactionType} from '../transaction/types'
 
-export type RecursiveData = {
+export interface RecursiveData {
   marker: string
-  results: Array<any>
+  results: any[]
 }
 
 export type Getter = (marker?: string, limit?: number) => Promise<RecursiveData>
@@ -38,7 +40,7 @@ function getRecursiveRecur(
   getter: Getter,
   marker: string | undefined,
   limit: number
-): Promise<Array<any>> {
+): Promise<any[]> {
   return getter(marker, limit).then((data) => {
     const remaining = limit - data.results.length
     if (remaining > 0 && data.marker != null) {
@@ -50,7 +52,7 @@ function getRecursiveRecur(
   })
 }
 
-function getRecursive(getter: Getter, limit?: number): Promise<Array<any>> {
+function getRecursive(getter: Getter, limit?: number): Promise<any[]> {
   return getRecursiveRecur(getter, undefined, limit || Infinity)
 }
 
@@ -63,18 +65,21 @@ function renameCounterpartyToIssuer<T>(
       : obj.issuer != null
       ? obj.issuer
       : undefined
-  const withIssuer = Object.assign({}, obj, {issuer})
+  const withIssuer = {...obj, issuer}
   delete withIssuer.counterparty
   return withIssuer
 }
 
-export type RequestBookOffersArgs = {taker_gets: Issue; taker_pays: Issue}
+export interface RequestBookOffersArgs {
+  taker_gets: Issue
+  taker_pays: Issue
+}
 
 function renameCounterpartyToIssuerInOrder(order: RequestBookOffersArgs) {
   const taker_gets = renameCounterpartyToIssuer(order.taker_gets)
   const taker_pays = renameCounterpartyToIssuer(order.taker_pays)
   const changes = {taker_gets, taker_pays}
-  return Object.assign({}, order, _.omitBy(changes, value => value == null))
+  return {...order, ..._.omitBy(changes, (value) => value == null)}
 }
 
 function signum(num) {
@@ -82,10 +87,13 @@ function signum(num) {
 }
 
 /**
- *  Order two rippled transactions based on their ledger_index.
- *  If two transactions took place in the same ledger, sort
- *  them based on TransactionIndex
- *  See: https://developers.ripple.com/transaction-metadata.html
+ * Order two rippled transactions based on their ledger_index.
+ * If two transactions took place in the same ledger, sort
+ * them based on TransactionIndex
+ * See: https://developers.ripple.com/transaction-metadata.html.
+ *
+ * @param first
+ * @param second
  */
 function compareTransactions(
   first: FormattedTransactionType,
@@ -129,9 +137,10 @@ function ensureLedgerVersion(this: Client, options: any): Promise<object> {
   ) {
     return Promise.resolve(options)
   }
-  return this.getLedgerVersion().then((ledgerVersion) =>
-    Object.assign({}, options, {ledgerVersion})
-  )
+  return this.getLedgerVersion().then((ledgerVersion) => ({
+    ...options,
+    ledgerVersion
+  }))
 }
 
 export {

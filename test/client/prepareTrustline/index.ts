@@ -1,6 +1,7 @@
 import requests from '../../fixtures/requests'
 import responses from '../../fixtures/responses'
 import {assertRejects, assertResultMatch, TestSuite} from '../../utils'
+
 const instructionsWithMaxLedgerVersionOffset = {maxLedgerVersionOffset: 100}
 
 /**
@@ -36,7 +37,7 @@ export default <TestSuite>{
   },
 
   'invalid': async (client, address) => {
-    const trustline = Object.assign({}, requests.prepareTrustline.complex)
+    const trustline = {...requests.prepareTrustline.complex}
     delete trustline.limit // Make invalid
 
     await assertRejects(
@@ -56,7 +57,11 @@ export default <TestSuite>{
       requests.prepareTrustline.issuedXAddress,
       instructionsWithMaxLedgerVersionOffset
     )
-    assertResultMatch(result, responses.prepareTrustline.issuedXAddress, 'prepare')
+    assertResultMatch(
+      result,
+      responses.prepareTrustline.issuedXAddress,
+      'prepare'
+    )
   },
 
   'with ticket': async (client, address) => {

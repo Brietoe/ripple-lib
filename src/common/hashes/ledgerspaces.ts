@@ -6,16 +6,17 @@
  *
  * Each namespace is just a single character prefix.
  *
- * See [LedgerNameSpace enum](https://github.com/ripple/rippled/blob/master/src/ripple/protocol/LedgerFormats.h#L100)
+ * See [LedgerNameSpace enum](https://github.com/ripple/rippled/blob/master/src/ripple/protocol/LedgerFormats.h#L100).
  */
-export default {
+
+const ledgerSpaces = {
   account: 'a',
   dirNode: 'd',
   generatorMap: 'g',
   rippleState: 'r',
-  offer: 'o', // Entry for an offer.
-  ownerDir: 'O', // Directory of things owned by an account.
-  bookDir: 'B', // Directory of order books.
+  offer: 'o',
+  ownerDir: 'O',
+  bookDir: 'B',
   contract: 'c',
   skipList: 's',
   escrow: 'u',
@@ -23,7 +24,9 @@ export default {
   feeSettings: 'e',
   ticket: 'T',
   signerList: 'S',
-  paychan: 'x',
+  payChannel: 'x',
   check: 'C',
   depositPreauth: 'p'
 }
+
+export default ledgerSpaces

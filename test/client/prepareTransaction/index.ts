@@ -1,7 +1,9 @@
 import {RippledError, ValidationError} from 'xrpl-local/common/errors'
+
 import requests from '../../fixtures/requests'
 import responses from '../../fixtures/responses'
 import {assertRejects, assertResultMatch, TestSuite} from '../../utils'
+
 const instructionsWithMaxLedgerVersionOffset = {maxLedgerVersionOffset: 100}
 
 export const config = {
@@ -62,47 +64,43 @@ export default <TestSuite>{
     return assertResultMatch(response, expected, 'prepare')
   },
 
-  'rejects Promise if both are set, even when txJSON.Fee matches instructions.fee': async (
-    client,
-    address
-  ) => {
-    const localInstructions = {
-      ...instructionsWithMaxLedgerVersionOffset,
-      fee: '0.000016'
-    }
-    const txJSON = {
-      TransactionType: 'DepositPreauth',
-      Account: address,
-      Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
-      Fee: '16'
-    }
-    await assertRejects(
-      client.prepareTransaction(txJSON, localInstructions),
-      ValidationError,
-      '`Fee` in txJSON and `fee` in `instructions` cannot both be set'
-    )
-  },
+  'rejects Promise if both are set, even when txJSON.Fee matches instructions.fee':
+    async (client, address) => {
+      const localInstructions = {
+        ...instructionsWithMaxLedgerVersionOffset,
+        fee: '0.000016'
+      }
+      const txJSON = {
+        TransactionType: 'DepositPreauth',
+        Account: address,
+        Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+        Fee: '16'
+      }
+      await assertRejects(
+        client.prepareTransaction(txJSON, localInstructions),
+        ValidationError,
+        '`Fee` in txJSON and `fee` in `instructions` cannot both be set'
+      )
+    },
 
-  'rejects Promise if both are set, when txJSON.Fee does not match instructions.fee': async (
-    client,
-    address
-  ) => {
-    const localInstructions = {
-      ...instructionsWithMaxLedgerVersionOffset,
-      fee: '0.000018'
-    }
-    const txJSON = {
-      TransactionType: 'DepositPreauth',
-      Account: address,
-      Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
-      Fee: '20'
-    }
-    await assertRejects(
-      client.prepareTransaction(txJSON, localInstructions),
-      ValidationError,
-      '`Fee` in txJSON and `fee` in `instructions` cannot both be set'
-    )
-  },
+  'rejects Promise if both are set, when txJSON.Fee does not match instructions.fee':
+    async (client, address) => {
+      const localInstructions = {
+        ...instructionsWithMaxLedgerVersionOffset,
+        fee: '0.000018'
+      }
+      const txJSON = {
+        TransactionType: 'DepositPreauth',
+        Account: address,
+        Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+        Fee: '20'
+      }
+      await assertRejects(
+        client.prepareTransaction(txJSON, localInstructions),
+        ValidationError,
+        '`Fee` in txJSON and `fee` in `instructions` cannot both be set'
+      )
+    },
 
   'rejects Promise when the Fee is capitalized in Instructions': async (
     client,
@@ -188,54 +186,53 @@ export default <TestSuite>{
     return assertResultMatch(response, expected, 'prepare')
   },
 
-  'does not overwrite Sequence when same sequence is provided in both txJSON and Instructions': async (
-    client,
-    address
-  ) => {
-    const localInstructions = {
-      ...instructionsWithMaxLedgerVersionOffset,
-      maxFee: '0.000012',
-      sequence: 100
-    }
-    const txJSON = {
-      TransactionType: 'DepositPreauth',
-      Account: address,
-      Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
-      Sequence: 100
-    }
-    const response = await client.prepareTransaction(txJSON, localInstructions)
-    const expected = {
-      txJSON: `{"TransactionType":"DepositPreauth","Account":"${address}","Authorize":"rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo","Flags":2147483648,"LastLedgerSequence":8820051,"Fee":"12","Sequence":100}`,
-      instructions: {
-        fee: '0.000012',
-        sequence: 100,
-        maxLedgerVersion: 8820051
+  'does not overwrite Sequence when same sequence is provided in both txJSON and Instructions':
+    async (client, address) => {
+      const localInstructions = {
+        ...instructionsWithMaxLedgerVersionOffset,
+        maxFee: '0.000012',
+        sequence: 100
       }
-    }
-    return assertResultMatch(response, expected, 'prepare')
-  },
+      const txJSON = {
+        TransactionType: 'DepositPreauth',
+        Account: address,
+        Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+        Sequence: 100
+      }
+      const response = await client.prepareTransaction(
+        txJSON,
+        localInstructions
+      )
+      const expected = {
+        txJSON: `{"TransactionType":"DepositPreauth","Account":"${address}","Authorize":"rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo","Flags":2147483648,"LastLedgerSequence":8820051,"Fee":"12","Sequence":100}`,
+        instructions: {
+          fee: '0.000012',
+          sequence: 100,
+          maxLedgerVersion: 8820051
+        }
+      }
+      return assertResultMatch(response, expected, 'prepare')
+    },
 
-  'rejects Promise when Sequence in txJSON does not match sequence in Instructions': async (
-    client,
-    address
-  ) => {
-    const localInstructions = {
-      ...instructionsWithMaxLedgerVersionOffset,
-      maxFee: '0.000012',
-      sequence: 100
-    }
-    const txJSON = {
-      TransactionType: 'DepositPreauth',
-      Account: address,
-      Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
-      Sequence: 101
-    }
-    await assertRejects(
-      client.prepareTransaction(txJSON, localInstructions),
-      ValidationError,
-      '`Sequence` in txJSON must match `sequence` in `instructions`'
-    )
-  },
+  'rejects Promise when Sequence in txJSON does not match sequence in Instructions':
+    async (client, address) => {
+      const localInstructions = {
+        ...instructionsWithMaxLedgerVersionOffset,
+        maxFee: '0.000012',
+        sequence: 100
+      }
+      const txJSON = {
+        TransactionType: 'DepositPreauth',
+        Account: address,
+        Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+        Sequence: 101
+      }
+      await assertRejects(
+        client.prepareTransaction(txJSON, localInstructions),
+        ValidationError,
+        '`Sequence` in txJSON must match `sequence` in `instructions`'
+      )
+    },
 
   'rejects Promise when the Sequence is capitalized in Instructions': async (
     client,
@@ -260,7 +257,10 @@ export default <TestSuite>{
 
   // LastLedgerSequence aka maxLedgerVersion/maxLedgerVersionOffset:
 
-  'does not overwrite LastLedgerSequence in txJSON': async (client, address) => {
+  'does not overwrite LastLedgerSequence in txJSON': async (
+    client,
+    address
+  ) => {
     const localInstructions = {}
     const txJSON = {
       TransactionType: 'DepositPreauth',
@@ -330,113 +330,103 @@ export default <TestSuite>{
     return assertResultMatch(response, expected, 'prepare')
   },
 
-  'rejects Promise if txJSON.LastLedgerSequence and instructions.maxLedgerVersion both are set': async (
-    client,
-    address
-  ) => {
-    const localInstructions = {
-      maxLedgerVersion: 8900000
-    }
-    const txJSON = {
-      TransactionType: 'DepositPreauth',
-      Account: address,
-      Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
-      Fee: '16',
-      LastLedgerSequence: 8900000
-    }
-    await assertRejects(
-      client.prepareTransaction(txJSON, localInstructions),
-      ValidationError,
-      '`LastLedgerSequence` in txJSON and `maxLedgerVersion` in `instructions` cannot both be set'
-    )
-  },
+  'rejects Promise if txJSON.LastLedgerSequence and instructions.maxLedgerVersion both are set':
+    async (client, address) => {
+      const localInstructions = {
+        maxLedgerVersion: 8900000
+      }
+      const txJSON = {
+        TransactionType: 'DepositPreauth',
+        Account: address,
+        Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+        Fee: '16',
+        LastLedgerSequence: 8900000
+      }
+      await assertRejects(
+        client.prepareTransaction(txJSON, localInstructions),
+        ValidationError,
+        '`LastLedgerSequence` in txJSON and `maxLedgerVersion` in `instructions` cannot both be set'
+      )
+    },
 
-  'rejects Promise if txJSON.LastLedgerSequence and instructions.maxLedgerVersionOffset both are set': async (
-    client,
-    address
-  ) => {
-    const localInstructions = {
-      ...instructionsWithMaxLedgerVersionOffset,
-      maxLedgerVersionOffset: 123
-    }
-    const txJSON = {
-      TransactionType: 'DepositPreauth',
-      Account: address,
-      Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
-      Fee: '16',
-      LastLedgerSequence: 8900000
-    }
-    await assertRejects(
-      client.prepareTransaction(txJSON, localInstructions),
-      ValidationError,
-      '`LastLedgerSequence` in txJSON and `maxLedgerVersionOffset` in `instructions` cannot both be set'
-    )
-  },
+  'rejects Promise if txJSON.LastLedgerSequence and instructions.maxLedgerVersionOffset both are set':
+    async (client, address) => {
+      const localInstructions = {
+        ...instructionsWithMaxLedgerVersionOffset,
+        maxLedgerVersionOffset: 123
+      }
+      const txJSON = {
+        TransactionType: 'DepositPreauth',
+        Account: address,
+        Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+        Fee: '16',
+        LastLedgerSequence: 8900000
+      }
+      await assertRejects(
+        client.prepareTransaction(txJSON, localInstructions),
+        ValidationError,
+        '`LastLedgerSequence` in txJSON and `maxLedgerVersionOffset` in `instructions` cannot both be set'
+      )
+    },
 
-  'rejects Promise if instructions.maxLedgerVersion and instructions.maxLedgerVersionOffset both are set': async (
-    client,
-    address
-  ) => {
-    const localInstructions = {
-      ...instructionsWithMaxLedgerVersionOffset,
-      maxLedgerVersion: 8900000,
-      maxLedgerVersionOffset: 123
-    }
-    const txJSON = {
-      TransactionType: 'DepositPreauth',
-      Account: address,
-      Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
-      Fee: '16'
-    }
-    await assertRejects(
-      client.prepareTransaction(txJSON, localInstructions),
-      ValidationError,
-      'instance is of prohibited type [object Object]'
-    )
-  },
+  'rejects Promise if instructions.maxLedgerVersion and instructions.maxLedgerVersionOffset both are set':
+    async (client, address) => {
+      const localInstructions = {
+        ...instructionsWithMaxLedgerVersionOffset,
+        maxLedgerVersion: 8900000,
+        maxLedgerVersionOffset: 123
+      }
+      const txJSON = {
+        TransactionType: 'DepositPreauth',
+        Account: address,
+        Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+        Fee: '16'
+      }
+      await assertRejects(
+        client.prepareTransaction(txJSON, localInstructions),
+        ValidationError,
+        'instance is of prohibited type [object Object]'
+      )
+    },
 
-  'rejects Promise if txJSON.LastLedgerSequence and instructions.maxLedgerVersion and instructions.maxLedgerVersionOffset all are set': async (
-    client,
-    address
-  ) => {
-    const localInstructions = {
-      ...instructionsWithMaxLedgerVersionOffset,
-      maxLedgerVersion: 8900000,
-      maxLedgerVersionOffset: 123
-    }
-    const txJSON = {
-      TransactionType: 'DepositPreauth',
-      Account: address,
-      Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
-      Fee: '16',
-      LastLedgerSequence: 8900000
-    }
-    await assertRejects(
-      client.prepareTransaction(txJSON, localInstructions),
-      ValidationError,
-      'instance is of prohibited type [object Object]'
-    )
-  },
+  'rejects Promise if txJSON.LastLedgerSequence and instructions.maxLedgerVersion and instructions.maxLedgerVersionOffset all are set':
+    async (client, address) => {
+      const localInstructions = {
+        ...instructionsWithMaxLedgerVersionOffset,
+        maxLedgerVersion: 8900000,
+        maxLedgerVersionOffset: 123
+      }
+      const txJSON = {
+        TransactionType: 'DepositPreauth',
+        Account: address,
+        Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+        Fee: '16',
+        LastLedgerSequence: 8900000
+      }
+      await assertRejects(
+        client.prepareTransaction(txJSON, localInstructions),
+        ValidationError,
+        'instance is of prohibited type [object Object]'
+      )
+    },
 
-  'rejects Promise when the maxLedgerVersion is capitalized in Instructions': async (
-    client,
-    address
-  ) => {
-    const localInstructions = {
-      ...instructionsWithMaxLedgerVersionOffset,
-      MaxLedgerVersion: 8900000 // Intentionally capitalized in this test, but the correct field would be `maxLedgerVersion`
-    }
-    const txJSON = {
-      TransactionType: 'DepositPreauth',
-      Account: address,
-      Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo'
-    }
-    await assertRejects(
-      client.prepareTransaction(txJSON, localInstructions),
-      ValidationError,
-      'instance additionalProperty "MaxLedgerVersion" exists in instance when not allowed'
-    )
-  },
+  'rejects Promise when the maxLedgerVersion is capitalized in Instructions':
+    async (client, address) => {
+      const localInstructions = {
+        ...instructionsWithMaxLedgerVersionOffset,
+        MaxLedgerVersion: 8900000 // Intentionally capitalized in this test, but the correct field would be `maxLedgerVersion`
+      }
+      const txJSON = {
+        TransactionType: 'DepositPreauth',
+        Account: address,
+        Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo'
+      }
+      await assertRejects(
+        client.prepareTransaction(txJSON, localInstructions),
+        ValidationError,
+        'instance additionalProperty "MaxLedgerVersion" exists in instance when not allowed'
+      )
+    },
 
   'rejects Promise when the maxLedgerVersion is specified in txJSON': async (
     client,
@@ -456,23 +446,21 @@ export default <TestSuite>{
     )
   },
 
-  'rejects Promise when the maxLedgerVersionOffset is specified in txJSON': async (
-    client,
-    address
-  ) => {
-    const localInstructions = instructionsWithMaxLedgerVersionOffset
-    const txJSON = {
-      TransactionType: 'DepositPreauth',
-      Account: address,
-      Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
-      maxLedgerVersionOffset: 8900000
-    }
-    await assertRejects(
-      client.prepareTransaction(txJSON, localInstructions),
-      ValidationError,
-      'txJSON additionalProperty "maxLedgerVersionOffset" exists in instance when not allowed'
-    )
-  },
+  'rejects Promise when the maxLedgerVersionOffset is specified in txJSON':
+    async (client, address) => {
+      const localInstructions = instructionsWithMaxLedgerVersionOffset
+      const txJSON = {
+        TransactionType: 'DepositPreauth',
+        Account: address,
+        Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+        maxLedgerVersionOffset: 8900000
+      }
+      await assertRejects(
+        client.prepareTransaction(txJSON, localInstructions),
+        ValidationError,
+        'txJSON additionalProperty "maxLedgerVersionOffset" exists in instance when not allowed'
+      )
+    },
 
   'rejects Promise when the sequence is specified in txJSON': async (
     client,
@@ -569,26 +557,28 @@ export default <TestSuite>{
     )
   },
 
-  'rejects Promise when Account is valid but non-existent on the ledger': async (
-    client
-  ) => {
-    const localInstructions = {
-      ...instructionsWithMaxLedgerVersionOffset,
-      maxFee: '0.000012'
-    }
-    const txJSON = {
-      Account: 'rogvkYnY8SWjxkJNgU4ZRVfLeRyt5DR9i',
-      TransactionType: 'DepositPreauth',
-      Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo'
-    }
-    await assertRejects(
-      client.prepareTransaction(txJSON, localInstructions),
-      RippledError,
-      'Account not found.'
-    )
-  },
+  'rejects Promise when Account is valid but non-existent on the ledger':
+    async (client) => {
+      const localInstructions = {
+        ...instructionsWithMaxLedgerVersionOffset,
+        maxFee: '0.000012'
+      }
+      const txJSON = {
+        Account: 'rogvkYnY8SWjxkJNgU4ZRVfLeRyt5DR9i',
+        TransactionType: 'DepositPreauth',
+        Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo'
+      }
+      await assertRejects(
+        client.prepareTransaction(txJSON, localInstructions),
+        RippledError,
+        'Account not found.'
+      )
+    },
 
-  'rejects Promise when TransactionType is missing': async (client, address) => {
+  'rejects Promise when TransactionType is missing': async (
+    client,
+    address
+  ) => {
     const localInstructions = {
       ...instructionsWithMaxLedgerVersionOffset,
       maxFee: '0.000012'
@@ -706,10 +696,7 @@ export default <TestSuite>{
       Authorize: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo'
     }
     const expected = {
-      txJSON:
-        '{"TransactionType":"DepositPreauth","Account":"' +
-        address +
-        '","Authorize":"rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo","Flags":2147483648,"LastLedgerSequence":8820051,"Fee":"12","Sequence":23}',
+      txJSON: `{"TransactionType":"DepositPreauth","Account":"${address}","Authorize":"rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo","Flags":2147483648,"LastLedgerSequence":8820051,"Fee":"12","Sequence":23}`,
       instructions: {
         fee: '0.000012',
         sequence: 23,
@@ -734,10 +721,7 @@ export default <TestSuite>{
 
     const response = await client.prepareTransaction(txJSON, localInstructions)
     const expected = {
-      txJSON:
-        '{"TransactionType":"DepositPreauth","Account":"' +
-        address +
-        '","Unauthorize":"rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo","Flags":2147483648,"LastLedgerSequence":8820051,"Fee":"12","Sequence":23}',
+      txJSON: `{"TransactionType":"DepositPreauth","Account":"${address}","Unauthorize":"rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo","Flags":2147483648,"LastLedgerSequence":8820051,"Fee":"12","Sequence":23}`,
       instructions: {
         fee: '0.000012',
         sequence: 23,
@@ -761,10 +745,7 @@ export default <TestSuite>{
 
     const response = await client.prepareTransaction(txJSON, localInstructions)
     const expected = {
-      txJSON:
-        '{"TransactionType":"AccountDelete","Account":"' +
-        address +
-        '","Destination":"rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe","Flags":2147483648,"LastLedgerSequence":8820051,"Fee":"12","Sequence":23}',
+      txJSON: `{"TransactionType":"AccountDelete","Account":"${address}","Destination":"rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe","Flags":2147483648,"LastLedgerSequence":8820051,"Fee":"12","Sequence":23}`,
       instructions: {
         fee: '0.000012',
         sequence: 23,
@@ -887,83 +868,85 @@ export default <TestSuite>{
     assertResultMatch(response, responses.preparePayment.allOptions, 'prepare')
   },
 
-  'fee is capped at default maxFee of 2 XRP (using txJSON.LastLedgerSequence)': async (
-    client,
-    address
-  ) => {
-    client._feeCushion = 1000000
+  'fee is capped at default maxFee of 2 XRP (using txJSON.LastLedgerSequence)':
+    async (client, address) => {
+      client._feeCushion = 1000000
 
-    const txJSON = {
-      Flags: 2147483648,
-      TransactionType: 'Payment',
-      Account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
-      Destination: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
-      Amount: {
-        value: '0.01',
-        currency: 'USD',
-        issuer: 'rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM'
-      },
-      SendMax: {
-        value: '0.01',
-        currency: 'USD',
-        issuer: 'rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM'
-      },
-      LastLedgerSequence: 8820051
-    }
-    const localInstructions = {}
-    const expectedResponse = {
-      txJSON:
-        '{"Flags":2147483648,"TransactionType":"Payment","Account":"r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59","Destination":"rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo","Amount":{"value":"0.01","currency":"USD","issuer":"rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM"},"SendMax":{"value":"0.01","currency":"USD","issuer":"rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM"},"LastLedgerSequence":8820051,"Fee":"2000000","Sequence":23}',
-      instructions: {
-        fee: '2',
-        sequence: 23,
+      const txJSON = {
+        Flags: 2147483648,
+        TransactionType: 'Payment',
+        Account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+        Destination: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+        Amount: {
+          value: '0.01',
+          currency: 'USD',
+          issuer: 'rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM'
+        },
+        SendMax: {
+          value: '0.01',
+          currency: 'USD',
+          issuer: 'rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM'
+        },
+        LastLedgerSequence: 8820051
+      }
+      const localInstructions = {}
+      const expectedResponse = {
+        txJSON:
+          '{"Flags":2147483648,"TransactionType":"Payment","Account":"r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59","Destination":"rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo","Amount":{"value":"0.01","currency":"USD","issuer":"rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM"},"SendMax":{"value":"0.01","currency":"USD","issuer":"rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM"},"LastLedgerSequence":8820051,"Fee":"2000000","Sequence":23}',
+        instructions: {
+          fee: '2',
+          sequence: 23,
+          maxLedgerVersion: 8820051
+        }
+      }
+      const response = await client.prepareTransaction(
+        txJSON,
+        localInstructions
+      )
+      assertResultMatch(response, expectedResponse, 'prepare')
+    },
+
+  'fee is capped at default maxFee of 2 XRP (using instructions.maxLedgerVersion)':
+    async (client, address) => {
+      client._feeCushion = 1000000
+
+      const txJSON = {
+        Flags: 2147483648,
+        TransactionType: 'Payment',
+        Account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
+        Destination: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
+        Amount: {
+          value: '0.01',
+          currency: 'USD',
+          issuer: 'rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM'
+        },
+        SendMax: {
+          value: '0.01',
+          currency: 'USD',
+          issuer: 'rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM'
+        }
+      }
+
+      const localInstructions = {
         maxLedgerVersion: 8820051
       }
-    }
-    const response = await client.prepareTransaction(txJSON, localInstructions)
-    assertResultMatch(response, expectedResponse, 'prepare')
-  },
 
-  'fee is capped at default maxFee of 2 XRP (using instructions.maxLedgerVersion)': async (
-    client,
-    address
-  ) => {
-    client._feeCushion = 1000000
-
-    const txJSON = {
-      Flags: 2147483648,
-      TransactionType: 'Payment',
-      Account: 'r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59',
-      Destination: 'rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo',
-      Amount: {
-        value: '0.01',
-        currency: 'USD',
-        issuer: 'rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM'
-      },
-      SendMax: {
-        value: '0.01',
-        currency: 'USD',
-        issuer: 'rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM'
+      const expectedResponse = {
+        txJSON:
+          '{"Flags":2147483648,"TransactionType":"Payment","Account":"r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59","Destination":"rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo","Amount":{"value":"0.01","currency":"USD","issuer":"rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM"},"SendMax":{"value":"0.01","currency":"USD","issuer":"rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM"},"LastLedgerSequence":8820051,"Fee":"2000000","Sequence":23}',
+        instructions: {
+          fee: '2',
+          sequence: 23,
+          maxLedgerVersion: 8820051
+        }
       }
-    }
 
-    const localInstructions = {
-      maxLedgerVersion: 8820051
-    }
-
-    const expectedResponse = {
-      txJSON:
-        '{"Flags":2147483648,"TransactionType":"Payment","Account":"r9cZA1mLK5R5Am25ArfXFmqgNwjZgnfk59","Destination":"rpZc4mVfWUif9CRoHRKKcmhu1nx2xktxBo","Amount":{"value":"0.01","currency":"USD","issuer":"rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM"},"SendMax":{"value":"0.01","currency":"USD","issuer":"rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM"},"LastLedgerSequence":8820051,"Fee":"2000000","Sequence":23}',
-      instructions: {
-        fee: '2',
-        sequence: 23,
-        maxLedgerVersion: 8820051
-      }
-    }
-
-    const response = await client.prepareTransaction(txJSON, localInstructions)
-    assertResultMatch(response, expectedResponse, 'prepare')
-  },
+      const response = await client.prepareTransaction(
+        txJSON,
+        localInstructions
+      )
+      assertResultMatch(response, expectedResponse, 'prepare')
+    },
 
   // prepareTransaction - Payment
   'fee is capped to custom maxFeeXRP when maxFee exceeds maxFeeXRP': async (
@@ -1075,7 +1058,6 @@ export default <TestSuite>{
     assertResultMatch(response, expectedResponse, 'prepare')
   },
 
-
   'xaddress-issuer': async (client, address) => {
     const localInstructions = {
       ...instructionsWithMaxLedgerVersionOffset,
@@ -1140,7 +1122,8 @@ export default <TestSuite>{
       Destination: 'rsA2LpzuawewSBQXkiju3YQTMzW13pAAdW',
       SettleDelay: 86400,
       // Ensure this is in upper case if it is not already
-      PublicKey: '32D2471DB72B27E3310F355BB33E339BF26F8392D5A93D3BC0FC3B566612DA0F0A'.toUpperCase(),
+      PublicKey:
+        '32D2471DB72B27E3310F355BB33E339BF26F8392D5A93D3BC0FC3B566612DA0F0A'.toUpperCase(),
       CancelAfter: client.iso8601ToRippleTime('2017-02-17T15:04:57Z'),
       SourceTag: 11747,
       DestinationTag: 23480
@@ -1293,7 +1276,10 @@ export default <TestSuite>{
     )
   },
 
-  'sets sequence to 0 if a ticketSequence is passed': async (client, address) => {
+  'sets sequence to 0 if a ticketSequence is passed': async (
+    client,
+    address
+  ) => {
     const localInstructions = {
       ...instructionsWithMaxLedgerVersionOffset,
       maxFee: '0.000012',

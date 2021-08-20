@@ -1,8 +1,9 @@
-import {validate} from '../common'
-import {FormattedLedger, parseLedger} from './parse/ledger'
 import {Client} from '..'
+import {validate} from '../common'
 
-export type GetLedgerOptions = {
+import {FormattedLedger, parseLedger} from './parse/ledger'
+
+export interface GetLedgerOptions {
   ledgerHash?: string
   ledgerVersion?: number
   includeAllData?: boolean

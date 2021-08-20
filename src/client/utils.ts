@@ -1,5 +1,5 @@
-import * as common from '../common'
 import {Client} from '..'
+import * as common from '../common'
 
 function getLedgerVersion(this: Client): Promise<number> {
   return this.connection.getLedgerVersion()

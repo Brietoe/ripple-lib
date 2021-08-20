@@ -1,11 +1,12 @@
 import * as assert from 'assert'
-import {parseTimestamp} from './utils'
-import {removeUndefined} from '../../common'
-import parseAmount from './amount'
-import {Amount} from '../../common/types/objects'
-import {parseMemos} from './utils'
 
-export type FormattedCheckCreate = {
+import {removeUndefined} from '../../common'
+import {Amount} from '../../common/types/objects'
+
+import parseAmount from './amount'
+import {parseTimestamp, parseMemos} from './utils'
+
+export interface FormattedCheckCreate {
   // account that can cash the check.
   destination: string
 

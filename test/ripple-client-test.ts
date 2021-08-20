@@ -1,10 +1,11 @@
-import setupClient from './setup-client'
 import {Client} from 'xrpl-local'
+
 import addresses from './fixtures/addresses.json'
+import setupClient from './setup-client'
 import {getAllPublicMethods, loadTestSuites} from './utils'
 
 /**
- * Client Test Runner
+ * Client Test Runner.
  *
  * Background: "test/client-test.ts" had hit 4000+ lines of test code and 300+
  * individual tests. Additionally, a new address format was added which

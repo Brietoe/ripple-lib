@@ -1,14 +1,16 @@
-import * as utils from './utils'
-import {validate, iso8601ToRippleTime, xrpToDrops} from '../common'
-const ValidationError = utils.common.errors.ValidationError
-import {Instructions, Prepare, TransactionJSON} from './types'
-import {Memo} from '../common/types/objects'
 import {Client} from '..'
+import {validate, iso8601ToRippleTime, xrpToDrops} from '../common'
+import {Memo} from '../common/types/objects'
 
-export type EscrowCreation = {
+import {Instructions, Prepare, TransactionJSON} from './types'
+import * as utils from './utils'
+
+const ValidationError = utils.common.errors.ValidationError
+
+export interface EscrowCreation {
   amount: string
   destination: string
-  memos?: Array<Memo>
+  memos?: Memo[]
   condition?: string
   allowCancelAfter?: string
   allowExecuteAfter?: string

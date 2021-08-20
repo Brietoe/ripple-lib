@@ -1,9 +1,12 @@
 import * as assert from 'assert'
-import {removeUndefined} from '../../common'
+
 import {classicAddressToXAddress} from 'ripple-address-codec'
+
+import {removeUndefined} from '../../common'
+
 import {parseMemos} from './utils'
 
-export type FormattedAccountDelete = {
+export interface FormattedAccountDelete {
   // account (address) of an account to receive any leftover XRP after deleting the sending account.
   // Must be a funded account in the ledger, and must not be the sending account.
   destination: string

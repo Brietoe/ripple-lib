@@ -1,9 +1,12 @@
-import {Client} from 'xrpl-local'
 import assert from 'assert-diff'
-import {assertResultMatch, TestSuite, assertRejects} from '../../utils'
-import responses from '../../fixtures/responses'
-import hashes from '../../fixtures/hashes.json'
+
+import {Client} from 'xrpl-local'
+
 import addresses from '../../fixtures/addresses.json'
+import hashes from '../../fixtures/hashes.json'
+import responses from '../../fixtures/responses'
+import {assertResultMatch, TestSuite, assertRejects} from '../../utils'
+
 const utils = Client._PRIVATE.ledgerUtils
 const {getTransactions: RESPONSE_FIXTURES} = responses
 
@@ -155,7 +158,6 @@ export default <TestSuite>{
     const response = await client.getTransactions(addresses.OTHER_ACCOUNT)
     assertResultMatch(response, RESPONSE_FIXTURES.one, 'getTransactions')
   }
-  
 }
 
 // This test relies on the binary (hex string) format, but computed fields like `date`

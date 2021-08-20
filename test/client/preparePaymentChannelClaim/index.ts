@@ -1,7 +1,9 @@
 import assert from 'assert-diff'
+
 import requests from '../../fixtures/requests'
 import responses from '../../fixtures/responses'
 import {assertResultMatch, TestSuite} from '../../utils'
+
 const instructionsWithMaxLedgerVersionOffset = {maxLedgerVersionOffset: 100}
 const {preparePaymentChannelClaim: REQUEST_FIXTURES} = requests
 const {preparePaymentChannelClaim: RESPONSE_FIXTURES} = responses
@@ -75,8 +77,9 @@ export default <TestSuite>{
         REQUEST_FIXTURES.full
       )
       throw new Error(
-        'Expected method to reject. Prepared transaction: ' +
-          JSON.stringify(prepared)
+        `Expected method to reject. Prepared transaction: ${JSON.stringify(
+          prepared
+        )}`
       )
     } catch (err) {
       assert.strictEqual(err.name, 'ValidationError')
@@ -97,8 +100,9 @@ export default <TestSuite>{
         REQUEST_FIXTURES.noSignature
       )
       throw new Error(
-        'Expected method to reject. Prepared transaction: ' +
-          JSON.stringify(prepared)
+        `Expected method to reject. Prepared transaction: ${JSON.stringify(
+          prepared
+        )}`
       )
     } catch (err) {
       assert.strictEqual(err.name, 'ValidationError')

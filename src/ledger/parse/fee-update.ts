@@ -1,5 +1,7 @@
 import BigNumber from 'bignumber.js'
+
 import {dropsToXrp} from '../../common'
+
 import {parseMemos} from './utils'
 
 function parseFeeUpdate(tx: any) {

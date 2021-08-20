@@ -1,8 +1,9 @@
 import assert from 'assert-diff'
-import responses from '../../fixtures/responses'
-import {TestSuite} from '../../utils'
+
 import ECDSA from '../../../src/common/ecdsa'
 import {GenerateAddressOptions} from '../../../src/offline/generate-address'
+import responses from '../../fixtures/responses'
+import {TestSuite} from '../../utils'
 
 /**
  * Every test suite exports their tests in the default object.
@@ -147,88 +148,85 @@ export default <TestSuite>{
     })
   },
 
-  'generateXAddress with algorithm `ecdsa-secp256k1` and given entropy; include classic address': async (
-    client
-  ) => {
-    // GIVEN we want to use 'ecdsa-secp256k1' with entropy of zero
-    const options: GenerateAddressOptions = {
-      algorithm: ECDSA.secp256k1,
-      entropy: new Array(16).fill(0),
-      includeClassicAddress: true
-    }
+  'generateXAddress with algorithm `ecdsa-secp256k1` and given entropy; include classic address':
+    async (client) => {
+      // GIVEN we want to use 'ecdsa-secp256k1' with entropy of zero
+      const options: GenerateAddressOptions = {
+        algorithm: ECDSA.secp256k1,
+        entropy: new Array(16).fill(0),
+        includeClassicAddress: true
+      }
 
-    // WHEN generating an X-address
-    const account = client.generateXAddress(options)
+      // WHEN generating an X-address
+      const account = client.generateXAddress(options)
 
-    // THEN we get the expected return value
-    assert.deepEqual(account, responses.generateAddress)
-  },
+      // THEN we get the expected return value
+      assert.deepEqual(account, responses.generateAddress)
+    },
 
-  'generateXAddress with algorithm `ed25519` and given entropy; include classic address': async (
-    client
-  ) => {
-    // GIVEN we want to use 'ed25519' with entropy of zero
-    const options: GenerateAddressOptions = {
-      algorithm: ECDSA.ed25519,
-      entropy: new Array(16).fill(0),
-      includeClassicAddress: true
-    }
+  'generateXAddress with algorithm `ed25519` and given entropy; include classic address':
+    async (client) => {
+      // GIVEN we want to use 'ed25519' with entropy of zero
+      const options: GenerateAddressOptions = {
+        algorithm: ECDSA.ed25519,
+        entropy: new Array(16).fill(0),
+        includeClassicAddress: true
+      }
 
-    // WHEN generating an X-address
-    const account = client.generateXAddress(options)
+      // WHEN generating an X-address
+      const account = client.generateXAddress(options)
 
-    // THEN we get the expected return value
-    assert.deepEqual(account, {
-      xAddress: 'X7xq1YJ4xmLSGGLhuakFQB9CebWYthQkgsvFC4LGFH871HB',
-      secret: 'sEdSJHS4oiAdz7w2X2ni1gFiqtbJHqE',
-      classicAddress: 'r9zRhGr7b6xPekLvT6wP4qNdWMryaumZS7',
-      address: 'r9zRhGr7b6xPekLvT6wP4qNdWMryaumZS7'
-    })
-  },
+      // THEN we get the expected return value
+      assert.deepEqual(account, {
+        xAddress: 'X7xq1YJ4xmLSGGLhuakFQB9CebWYthQkgsvFC4LGFH871HB',
+        secret: 'sEdSJHS4oiAdz7w2X2ni1gFiqtbJHqE',
+        classicAddress: 'r9zRhGr7b6xPekLvT6wP4qNdWMryaumZS7',
+        address: 'r9zRhGr7b6xPekLvT6wP4qNdWMryaumZS7'
+      })
+    },
 
-  'generateXAddress with algorithm `ecdsa-secp256k1` and given entropy; include classic address; for test network use': async (
-    client
-  ) => {
-    // GIVEN we want to use 'ecdsa-secp256k1' with entropy of zero
-    const options: GenerateAddressOptions = {
-      algorithm: ECDSA.secp256k1,
-      entropy: new Array(16).fill(0),
-      includeClassicAddress: true,
-      test: true
-    }
+  'generateXAddress with algorithm `ecdsa-secp256k1` and given entropy; include classic address; for test network use':
+    async (client) => {
+      // GIVEN we want to use 'ecdsa-secp256k1' with entropy of zero
+      const options: GenerateAddressOptions = {
+        algorithm: ECDSA.secp256k1,
+        entropy: new Array(16).fill(0),
+        includeClassicAddress: true,
+        test: true
+      }
 
-    // WHEN generating an X-address
-    const account = client.generateXAddress(options)
+      // WHEN generating an X-address
+      const account = client.generateXAddress(options)
 
-    // THEN we get the expected return value
-    const response = Object.assign({}, responses.generateAddress, {
-      xAddress: 'TVG3TcCD58BD6MZqsNuTihdrhZwR8SzvYS8U87zvHsAcNw4'
-    })
-    assert.deepEqual(account, response)
-  },
+      // THEN we get the expected return value
+      const response = {
+        ...responses.generateAddress,
+        xAddress: 'TVG3TcCD58BD6MZqsNuTihdrhZwR8SzvYS8U87zvHsAcNw4'
+      }
+      assert.deepEqual(account, response)
+    },
 
-  'generateXAddress with algorithm `ed25519` and given entropy; include classic address; for test network use': async (
-    client
-  ) => {
-    // GIVEN we want to use 'ed25519' with entropy of zero
-    const options: GenerateAddressOptions = {
-      algorithm: ECDSA.ed25519,
-      entropy: new Array(16).fill(0),
-      includeClassicAddress: true,
-      test: true
-    }
+  'generateXAddress with algorithm `ed25519` and given entropy; include classic address; for test network use':
+    async (client) => {
+      // GIVEN we want to use 'ed25519' with entropy of zero
+      const options: GenerateAddressOptions = {
+        algorithm: ECDSA.ed25519,
+        entropy: new Array(16).fill(0),
+        includeClassicAddress: true,
+        test: true
+      }
 
-    // WHEN generating an X-address
-    const account = client.generateXAddress(options)
+      // WHEN generating an X-address
+      const account = client.generateXAddress(options)
 
-    // THEN we get the expected return value
-    assert.deepEqual(account, {
-      xAddress: 'T7t4HeTMF5tT68agwuVbJwu23ssMPeh8dDtGysZoQiij1oo',
-      secret: 'sEdSJHS4oiAdz7w2X2ni1gFiqtbJHqE',
-      classicAddress: 'r9zRhGr7b6xPekLvT6wP4qNdWMryaumZS7',
-      address: 'r9zRhGr7b6xPekLvT6wP4qNdWMryaumZS7'
-    })
-  },
+      // THEN we get the expected return value
+      assert.deepEqual(account, {
+        xAddress: 'T7t4HeTMF5tT68agwuVbJwu23ssMPeh8dDtGysZoQiij1oo',
+        secret: 'sEdSJHS4oiAdz7w2X2ni1gFiqtbJHqE',
+        classicAddress: 'r9zRhGr7b6xPekLvT6wP4qNdWMryaumZS7',
+        address: 'r9zRhGr7b6xPekLvT6wP4qNdWMryaumZS7'
+      })
+    },
 
   'generateXAddress for test network use': async (client) => {
     // GIVEN we want an X-address for test network use
