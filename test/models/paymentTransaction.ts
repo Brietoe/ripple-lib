@@ -12,10 +12,10 @@ import {
  *
  * Providing runtime verification testing for each specific transaction type.
  */
-describe('Payment Transaction Verification', () => {
+describe('Payment Transaction Verification', function () {
   let paymentTransaction
 
-  beforeEach(() => {
+  beforeEach(function () {
     paymentTransaction = {
       TransactionType: 'Payment',
       Account: 'rUn84CUYbNjRoTQ6mSW7BVJPSVJNLb1QLo',
@@ -31,11 +31,11 @@ describe('Payment Transaction Verification', () => {
     } as any
   })
 
-  it(`verifies valid PaymentTransaction`, () => {
+  it(`verifies valid PaymentTransaction`, function () {
     assert.doesNotThrow(() => verifyPaymentTransaction(paymentTransaction))
   })
 
-  it(`throws when Amount is missing`, () => {
+  it(`throws when Amount is missing`, function () {
     delete paymentTransaction.Amount
     assert.throws(
       () => verifyPaymentTransaction(paymentTransaction),
@@ -44,7 +44,7 @@ describe('Payment Transaction Verification', () => {
     )
   })
 
-  it(`throws when Amount is invalid`, () => {
+  it(`throws when Amount is invalid`, function () {
     paymentTransaction.Amount = 1234
     assert.throws(
       () => verifyPaymentTransaction(paymentTransaction),
@@ -53,7 +53,7 @@ describe('Payment Transaction Verification', () => {
     )
   })
 
-  it(`throws when Destination is missing`, () => {
+  it(`throws when Destination is missing`, function () {
     delete paymentTransaction.Destination
     assert.throws(
       () => verifyPaymentTransaction(paymentTransaction),
@@ -62,7 +62,7 @@ describe('Payment Transaction Verification', () => {
     )
   })
 
-  it(`throws when Destination is invalid`, () => {
+  it(`throws when Destination is invalid`, function () {
     paymentTransaction.Destination = 7896214
     assert.throws(
       () => verifyPaymentTransaction(paymentTransaction),
@@ -71,7 +71,7 @@ describe('Payment Transaction Verification', () => {
     )
   })
 
-  it(`throws when DestinationTag is not a number`, () => {
+  it(`throws when DestinationTag is not a number`, function () {
     paymentTransaction.DestinationTag = '1'
     assert.throws(
       () => verifyPaymentTransaction(paymentTransaction),
@@ -80,7 +80,7 @@ describe('Payment Transaction Verification', () => {
     )
   })
 
-  it(`throws when InvoiceID is not a string`, () => {
+  it(`throws when InvoiceID is not a string`, function () {
     paymentTransaction.InvoiceID = 19832
     assert.throws(
       () => verifyPaymentTransaction(paymentTransaction),
@@ -89,7 +89,7 @@ describe('Payment Transaction Verification', () => {
     )
   })
 
-  it(`throws when Paths is invalid`, () => {
+  it(`throws when Paths is invalid`, function () {
     paymentTransaction.Paths = [[{account: 123}]]
     assert.throws(
       () => verifyPaymentTransaction(paymentTransaction),
@@ -98,7 +98,7 @@ describe('Payment Transaction Verification', () => {
     )
   })
 
-  it(`throws when SendMax is invalid`, () => {
+  it(`throws when SendMax is invalid`, function () {
     paymentTransaction.SendMax = 100000000
     assert.throws(
       () => verifyPaymentTransaction(paymentTransaction),
@@ -107,19 +107,19 @@ describe('Payment Transaction Verification', () => {
     )
   })
 
-  it(`verifies valid DeliverMin with tfPartialPayment flag set as a number`, () => {
+  it(`verifies valid DeliverMin with tfPartialPayment flag set as a number`, function () {
     paymentTransaction.DeliverMin = '10000'
     ;(paymentTransaction.Flags = PaymentTransactionFlagsEnum.tfPartialPayment),
       assert.doesNotThrow(() => verifyPaymentTransaction(paymentTransaction))
   })
 
-  it(`verifies valid DeliverMin with tfPartialPayment flag set as a boolean`, () => {
+  it(`verifies valid DeliverMin with tfPartialPayment flag set as a boolean`, function () {
     paymentTransaction.DeliverMin = '10000'
     paymentTransaction.Flags = {tfPartialPayment: true}
     assert.doesNotThrow(() => verifyPaymentTransaction(paymentTransaction))
   })
 
-  it(`throws when DeliverMin is invalid`, () => {
+  it(`throws when DeliverMin is invalid`, function () {
     paymentTransaction.DeliverMin = 10000
     paymentTransaction.Flags = {tfPartialPayment: true}
     assert.throws(
@@ -129,7 +129,7 @@ describe('Payment Transaction Verification', () => {
     )
   })
 
-  it(`throws when tfPartialPayment flag is missing with valid DeliverMin`, () => {
+  it(`throws when tfPartialPayment flag is missing with valid DeliverMin`, function () {
     paymentTransaction.DeliverMin = '10000'
     assert.throws(
       () => verifyPaymentTransaction(paymentTransaction),

@@ -11,7 +11,7 @@ import {verifyEscrowCancel} from '../../src/models/transactions/escrowCancel'
 describe('Transaction Verification', function () {
   let cancel
 
-  beforeEach(() => {
+  beforeEach(function () {
     cancel = {
       TransactionType: 'EscrowCancel',
       Account: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
@@ -20,11 +20,11 @@ describe('Transaction Verification', function () {
     }
   })
 
-  it(`Valid EscrowCancel`, () => {
+  it(`Valid EscrowCancel`, function () {
     assert.doesNotThrow(() => verifyEscrowCancel(cancel))
   })
 
-  it(`Invalid EscrowCancel missing owner`, () => {
+  it(`Invalid EscrowCancel missing owner`, function () {
     delete cancel.Owner
 
     assert.throws(
@@ -34,7 +34,7 @@ describe('Transaction Verification', function () {
     )
   })
 
-  it(`Invalid EscrowCancel missing offerSequence`, () => {
+  it(`Invalid EscrowCancel missing offerSequence`, function () {
     delete cancel.OfferSequence
 
     assert.throws(
@@ -44,7 +44,7 @@ describe('Transaction Verification', function () {
     )
   })
 
-  it(`Invalid OfferSequence`, () => {
+  it(`Invalid OfferSequence`, function () {
     cancel.Owner = 10
 
     assert.throws(
@@ -54,7 +54,7 @@ describe('Transaction Verification', function () {
     )
   })
 
-  it(`Invalid owner`, () => {
+  it(`Invalid owner`, function () {
     cancel.OfferSequence = '10'
 
     assert.throws(

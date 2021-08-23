@@ -9,10 +9,10 @@ import {verifyTicketCreate} from '../../src/models/transactions/ticketCreate'
  *
  * Providing runtime verification testing for each specific transaction type.
  */
-describe('TicketCreate Transaction Verification', () => {
+describe('TicketCreate Transaction Verification', function () {
   let ticketCreate
 
-  beforeEach(() => {
+  beforeEach(function () {
     ticketCreate = {
       TransactionType: 'TicketCreate',
       Account: 'rUn84CUYbNjRoTQ6mSW7BVJPSVJNLb1QLo',
@@ -20,11 +20,11 @@ describe('TicketCreate Transaction Verification', () => {
     } as any
   })
 
-  it('verifies valid TicketCreate', () => {
+  it('verifies valid TicketCreate', function () {
     assert.doesNotThrow(() => verifyTicketCreate(ticketCreate))
   })
 
-  it('throws when TicketCount is missing', () => {
+  it('throws when TicketCount is missing', function () {
     delete ticketCreate.TicketCount
     assert.throws(
       () => verifyTicketCreate(ticketCreate),
@@ -33,7 +33,7 @@ describe('TicketCreate Transaction Verification', () => {
     )
   })
 
-  it('throws when TicketCount is not a number', () => {
+  it('throws when TicketCount is not a number', function () {
     ticketCreate.TicketCount = '150'
     assert.throws(
       () => verifyTicketCreate(ticketCreate),
@@ -42,7 +42,7 @@ describe('TicketCreate Transaction Verification', () => {
     )
   })
 
-  it('throws when TicketCount is not an integer', () => {
+  it('throws when TicketCount is not an integer', function () {
     ticketCreate.TicketCount = 12.5
     assert.throws(
       () => verifyTicketCreate(ticketCreate),
@@ -51,7 +51,7 @@ describe('TicketCreate Transaction Verification', () => {
     )
   })
 
-  it('throws when TicketCount is < 1', () => {
+  it('throws when TicketCount is < 1', function () {
     ticketCreate.TicketCount = 0
     assert.throws(
       () => verifyTicketCreate(ticketCreate),
@@ -60,7 +60,7 @@ describe('TicketCreate Transaction Verification', () => {
     )
   })
 
-  it('throws when TicketCount is > 250', () => {
+  it('throws when TicketCount is > 250', function () {
     ticketCreate.TicketCount = 251
     assert.throws(
       () => verifyTicketCreate(ticketCreate),

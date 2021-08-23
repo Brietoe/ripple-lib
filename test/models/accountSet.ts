@@ -2,7 +2,10 @@ import {assert} from 'chai'
 
 import {ValidationError} from 'xrpl-local/common/errors'
 
-import {verifyAccountSet} from '../../src/models/transactions/accountSet'
+import {
+  AccountSet,
+  verifyAccountSet
+} from '../../src/models/transactions/accountSet'
 
 /**
  * AccountSet Transaction Verification Testing.
@@ -10,9 +13,9 @@ import {verifyAccountSet} from '../../src/models/transactions/accountSet'
  * Providing runtime verification testing for each specific transaction type.
  */
 describe('AccountSet Transaction Verification', function () {
-  let account
+  let account: AccountSet
 
-  beforeEach(() => {
+  beforeEach(function () {
     account = {
       TransactionType: 'AccountSet',
       Account: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
@@ -22,14 +25,14 @@ describe('AccountSet Transaction Verification', function () {
       SetFlag: 5,
       MessageKey:
         '03AB40A0490F9B7ED8DF29D246BF2D6269820A0EE7742ACDD457BEA7C7D0931EDB'
-    } as any
+    }
   })
 
-  it(`verifies valid AccountSet`, () => {
+  it(`verifies valid AccountSet`, function () {
     assert.doesNotThrow(() => verifyAccountSet(account))
   })
 
-  it(`throws w/ invalid SetFlag (out of range)`, () => {
+  it(`throws w/ invalid SetFlag (out of range)`, function () {
     account.SetFlag = 12
 
     assert.throws(
@@ -39,7 +42,7 @@ describe('AccountSet Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid SetFlag (incorrect type)`, () => {
+  it(`throws w/ invalid SetFlag (incorrect type)`, function () {
     account.SetFlag = 'abc'
 
     assert.throws(
@@ -49,7 +52,7 @@ describe('AccountSet Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid ClearFlag`, () => {
+  it(`throws w/ invalid ClearFlag`, function () {
     account.ClearFlag = 12
 
     assert.throws(
@@ -59,7 +62,7 @@ describe('AccountSet Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid Domain`, () => {
+  it(`throws w/ invalid Domain`, function () {
     account.Domain = 6578616
 
     assert.throws(
@@ -69,7 +72,7 @@ describe('AccountSet Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid EmailHash`, () => {
+  it(`throws w/ invalid EmailHash`, function () {
     account.EmailHash = 657861645678909876543456789876543
 
     assert.throws(
@@ -79,7 +82,7 @@ describe('AccountSet Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid MessageKey`, () => {
+  it(`throws w/ invalid MessageKey`, function () {
     account.MessageKey = 65786165678908765456789567890678
 
     assert.throws(
@@ -89,7 +92,7 @@ describe('AccountSet Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid TransferRate`, () => {
+  it(`throws w/ invalid TransferRate`, function () {
     account.TransferRate = '1000000001'
 
     assert.throws(
@@ -99,7 +102,7 @@ describe('AccountSet Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid TickSize`, () => {
+  it(`throws w/ invalid TickSize`, function () {
     account.TickSize = 20
 
     assert.throws(

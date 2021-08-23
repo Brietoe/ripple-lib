@@ -10,7 +10,7 @@ import {verifyOfferCreate} from '../../src/models/transactions/offerCreate'
  * Providing runtime verification testing for each specific transaction type.
  */
 describe('OfferCreate Transaction Verification', function () {
-  it(`verifies valid OfferCreate`, () => {
+  it(`verifies valid OfferCreate`, function () {
     const offer = {
       Account: 'r3rhWeE31Jt5sWmi4QiGLMZnY3ENgqw96W',
       Fee: '10',
@@ -81,7 +81,7 @@ describe('OfferCreate Transaction Verification', function () {
     assert.doesNotThrow(() => verifyOfferCreate(offer3))
   })
 
-  it(`throws w/ invalid Expiration`, () => {
+  it(`throws w/ invalid Expiration`, function () {
     const offer = {
       Account: 'r3rhWeE31Jt5sWmi4QiGLMZnY3ENgqw96W',
       Fee: '10',
@@ -109,7 +109,7 @@ describe('OfferCreate Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid OfferSequence`, () => {
+  it(`throws w/ invalid OfferSequence`, function () {
     const offer = {
       Account: 'r3rhWeE31Jt5sWmi4QiGLMZnY3ENgqw96W',
       Fee: '10',
@@ -137,7 +137,7 @@ describe('OfferCreate Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid TakerPays`, () => {
+  it(`throws w/ invalid TakerPays`, function () {
     const offer = {
       Account: 'r3rhWeE31Jt5sWmi4QiGLMZnY3ENgqw96W',
       Fee: '10',
@@ -161,7 +161,7 @@ describe('OfferCreate Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid TakerGets`, () => {
+  it(`throws w/ invalid TakerGets`, function () {
     const offer = {
       Account: 'r3rhWeE31Jt5sWmi4QiGLMZnY3ENgqw96W',
       Fee: '10',

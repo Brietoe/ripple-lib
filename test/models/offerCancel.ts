@@ -12,7 +12,7 @@ import {verifyOfferCancel} from '../../src/models/transactions/offerCancel'
 describe('OfferCancel Transaction Verification', function () {
   let offer
 
-  beforeEach(() => {
+  beforeEach(function () {
     offer = {
       Account: 'rnKiczmiQkZFiDES8THYyLA2pQohC5C6EF',
       Fee: '10',
@@ -28,16 +28,16 @@ describe('OfferCancel Transaction Verification', function () {
     } as any
   })
 
-  it(`verifies valid OfferCancel`, () => {
+  it(`verifies valid OfferCancel`, function () {
     assert.doesNotThrow(() => verifyOfferCancel(offer))
   })
 
-  it(`verifies valid OfferCancel with flags`, () => {
+  it(`verifies valid OfferCancel with flags`, function () {
     offer.Flags = 2147483648
     assert.doesNotThrow(() => verifyOfferCancel(offer))
   })
 
-  it(`throws w/ OfferSequence must be a number`, () => {
+  it(`throws w/ OfferSequence must be a number`, function () {
     offer.OfferSequence = '99'
     assert.throws(
       () => verifyOfferCancel(offer),
@@ -46,7 +46,7 @@ describe('OfferCancel Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ missing OfferSequence`, () => {
+  it(`throws w/ missing OfferSequence`, function () {
     delete offer.OfferSequence
     assert.throws(
       () => verifyOfferCancel(offer),

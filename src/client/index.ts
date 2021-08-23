@@ -84,10 +84,10 @@ import getTrustlines from '../ledger/trustlines'
 import * as ledgerUtils from '../ledger/utils'
 import {clamp, renameCounterpartyToIssuer} from '../ledger/utils'
 import {deriveKeypair, deriveAddress, deriveXAddress} from '../offline/derive'
-import computeLedgerHash from '../offline/ledgerhash'
-import signPaymentChannelClaim from '../offline/sign-payment-channel-claim'
+import computeLedgerHash from '../offline/ledgerHash'
+import signPaymentChannelClaim from '../offline/signPaymentChannelClaim'
 import {generateAddress, generateXAddress} from '../offline/utils'
-import verifyPaymentChannelClaim from '../offline/verify-payment-channel-claim'
+import verifyPaymentChannelClaim from '../offline/verifyPaymentChannelClaim'
 import prepareCheckCancel from '../transaction/check-cancel'
 import prepareCheckCash from '../transaction/check-cash'
 import prepareCheckCreate from '../transaction/check-create'
@@ -159,7 +159,7 @@ class Client extends EventEmitter {
 
   // New in > 0.21.0
   // non-validated ledger versions are allowed, and passed to rippled as-is.
-  private readonly connection: Connection
+  public readonly connection: Connection
 
   /**
    * Constructor for Client. Client uses a 4000 code internally to indicate a

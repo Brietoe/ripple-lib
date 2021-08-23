@@ -1,8 +1,8 @@
 import assert from 'assert-diff'
 import _ from 'lodash'
+import {RecursiveData} from 'xrpl-local/ledger/utils'
 
 import {Client} from 'xrpl-local'
-import {RecursiveData} from 'xrpl-local/ledger/utils'
 
 import addresses from './fixtures/addresses.json'
 import responses from './fixtures/responses'
@@ -133,7 +133,7 @@ describe('Client', function () {
     })
   })
 
-  it('common utils - toRippledAmount', async () => {
+  it('common utils - toRippledAmount', async function () {
     const amount = {issuer: 'is', currency: 'c', value: 'v'}
     assert.deepEqual(ledgerUtils.common.toRippledAmount(amount), {
       issuer: 'is',
@@ -142,7 +142,7 @@ describe('Client', function () {
     })
   })
 
-  it('ledger utils - renameCounterpartyToIssuerInOrder', async () => {
+  it('ledger utils - renameCounterpartyToIssuerInOrder', async function () {
     const order = {
       taker_gets: {counterparty: '1', currency: 'XRP'},
       taker_pays: {counterparty: '1', currency: 'XRP'}
@@ -157,7 +157,7 @@ describe('Client', function () {
     )
   })
 
-  it('ledger utils - compareTransactions', async () => {
+  it('ledger utils - compareTransactions', async function () {
     // @ts-expect-error
     assert.strictEqual(ledgerUtils.compareTransactions({}, {}), 0)
     let first: any = {outcome: {ledgerVersion: 1, indexInLedger: 100}}
@@ -171,7 +171,7 @@ describe('Client', function () {
     assert.strictEqual(ledgerUtils.compareTransactions(first, second), 1)
   })
 
-  it('ledger utils - getRecursive', async () => {
+  it('ledger utils - getRecursive', async function () {
     function getter(marker) {
       return new Promise<RecursiveData>((resolve, reject) => {
         if (marker != null) {

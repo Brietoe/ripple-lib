@@ -39,7 +39,7 @@ describe('Connection', function () {
     assert(connection._config.authorization == null)
   })
 
-  describe('trace', () => {
+  describe('trace', function () {
     const mockedRequestData = {mocked: 'request'}
     const mockedResponse = JSON.stringify({mocked: 'response', id: 0})
     const expectedMessages = [
@@ -49,7 +49,7 @@ describe('Connection', function () {
     ]
     const originalConsoleLog = console.log
 
-    afterEach(() => {
+    afterEach(function () {
       console.log = originalConsoleLog
     })
 

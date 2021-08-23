@@ -1,11 +1,19 @@
 import {classicAddressToXAddress} from 'ripple-address-codec'
 import {deriveKeypair, deriveAddress} from 'ripple-keypairs'
 
-function deriveXAddress(options: {
+interface DeriveXAddressOptions {
   publicKey: string
   tag: number | false
   test: boolean
-}): string {
+}
+
+/**
+ * Derive an XAddress from a public key.
+ *
+ * @param options - A public Key and a tag.
+ * @returns An XAddress.
+ */
+function deriveXAddress(options: DeriveXAddressOptions): string {
   const classicAddress = deriveAddress(options.publicKey)
   return classicAddressToXAddress(classicAddress, options.tag, options.test)
 }

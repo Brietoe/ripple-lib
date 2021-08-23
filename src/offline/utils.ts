@@ -4,7 +4,7 @@ import {
   computeBinaryTransactionSigningHash,
   computeAccountLedgerObjectID,
   computeSignerListLedgerObjectID,
-  computeOrderID,
+  computeOfferID,
   computeTrustlineHash,
   computeTransactionTreeHash,
   computeStateTreeHash,
@@ -18,8 +18,8 @@ import {
   toRippledAmount,
   convertKeysFromSnakeCaseToCamelCase,
   removeUndefined,
-  rippleTimeToISO8601,
-  iso8601ToRippleTime,
+  xrpTimeToISO8601,
+  iso8601ToXRPTime,
   isValidSecret
 } from '../common/utils'
 
@@ -28,10 +28,10 @@ import {
   generateAddressAPI,
   GenerateAddressOptions,
   GeneratedAddress
-} from './generate-address'
-import computeLedgerHeaderHash from './ledgerhash'
-import signPaymentChannelClaim from './sign-payment-channel-claim'
-import verifyPaymentChannelClaim from './verify-payment-channel-claim'
+} from './generateAddress'
+import computeLedgerHeaderHash from './ledgerHash'
+import signPaymentChannelClaim from './signPaymentChannelClaim'
+import verifyPaymentChannelClaim from './verifyPaymentChannelClaim'
 
 // @deprecated Use X-addresses instead
 const generateAddress = (
@@ -46,15 +46,15 @@ export {
   toRippledAmount,
   convertKeysFromSnakeCaseToCamelCase,
   removeUndefined,
-  rippleTimeToISO8601,
-  iso8601ToRippleTime,
+  xrpTimeToISO8601,
+  iso8601ToXRPTime,
   isValidSecret,
   computeBinaryTransactionHash,
   computeTransactionHash,
   computeBinaryTransactionSigningHash,
   computeAccountLedgerObjectID,
   computeSignerListLedgerObjectID,
-  computeOrderID,
+  computeOfferID,
   computeTrustlineHash,
   computeTransactionTreeHash,
   computeStateTreeHash,

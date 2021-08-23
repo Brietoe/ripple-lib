@@ -10,7 +10,7 @@ import {verifyCheckCash} from '../../src/models/transactions/checkCash'
  * Providing runtime verification testing for each specific transaction type.
  */
 describe('CheckCash Transaction Verification', function () {
-  it(`verifies valid CheckCash`, () => {
+  it(`verifies valid CheckCash`, function () {
     const validCheckCash = {
       Account: 'rfkE1aSy9G8Upk4JssnwBxhEv5p4mn2KTy',
       TransactionType: 'CheckCash',
@@ -23,7 +23,7 @@ describe('CheckCash Transaction Verification', function () {
     assert.doesNotThrow(() => verifyCheckCash(validCheckCash))
   })
 
-  it(`throws w/ invalid CheckID`, () => {
+  it(`throws w/ invalid CheckID`, function () {
     const invalidCheckID = {
       Account: 'rfkE1aSy9G8Upk4JssnwBxhEv5p4mn2KTy',
       TransactionType: 'CheckCash',
@@ -38,7 +38,7 @@ describe('CheckCash Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid Amount`, () => {
+  it(`throws w/ invalid Amount`, function () {
     const invalidAmount = {
       Account: 'rfkE1aSy9G8Upk4JssnwBxhEv5p4mn2KTy',
       TransactionType: 'CheckCash',
@@ -54,7 +54,7 @@ describe('CheckCash Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ having both Amount and DeliverMin`, () => {
+  it(`throws w/ having both Amount and DeliverMin`, function () {
     const invalidDeliverMin = {
       Account: 'rfkE1aSy9G8Upk4JssnwBxhEv5p4mn2KTy',
       TransactionType: 'CheckCash',
@@ -71,7 +71,7 @@ describe('CheckCash Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid DeliverMin`, () => {
+  it(`throws w/ invalid DeliverMin`, function () {
     const invalidDeliverMin = {
       Account: 'rfkE1aSy9G8Upk4JssnwBxhEv5p4mn2KTy',
       TransactionType: 'CheckCash',

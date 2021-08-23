@@ -12,7 +12,7 @@ import {verifySetRegularKey} from '../../src/models/transactions/setRegularKey'
 describe('SetRegularKey Transaction Verification', function () {
   let account
 
-  beforeEach(() => {
+  beforeEach(function () {
     account = {
       TransactionType: 'SetRegularKey',
       Account: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
@@ -22,16 +22,16 @@ describe('SetRegularKey Transaction Verification', function () {
     } as any
   })
 
-  it(`verifies valid SetRegularKey`, () => {
+  it(`verifies valid SetRegularKey`, function () {
     assert.doesNotThrow(() => verifySetRegularKey(account))
   })
 
-  it(`verifies w/o SetRegularKey`, () => {
+  it(`verifies w/o SetRegularKey`, function () {
     account.RegularKey = undefined
     assert.doesNotThrow(() => verifySetRegularKey(account))
   })
 
-  it(`throws w/ invalid RegularKey`, () => {
+  it(`throws w/ invalid RegularKey`, function () {
     account.RegularKey = 12369846963
 
     assert.throws(

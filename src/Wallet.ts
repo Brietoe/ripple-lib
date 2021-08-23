@@ -5,10 +5,11 @@ import {deriveKeypair, generateSeed, verify} from 'ripple-keypairs'
 
 import ECDSA from './common/ecdsa'
 import {ValidationError} from './common/errors'
-import {SignedTransaction} from './common/types/objects'
 import type {Transaction} from './models/transactions'
-import {signOffline} from './transaction/sign'
-import type {SignOptions} from './transaction/types'
+
+export interface SignOptions {
+  signAs: string
+}
 
 /**
  * A utility for deriving a wallet composed of a keypair (publicKey/privateKey).

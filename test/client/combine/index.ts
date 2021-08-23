@@ -3,13 +3,13 @@ import binary from 'ripple-binary-codec'
 
 import {ValidationError} from '../../../src/common/errors'
 import requests from '../../fixtures/requests'
-import responses from '../../fixtures/responses'
+import {combine} from '../../fixtures/responses'
 import type {TestSuite} from '../../utils'
 
 const {setDomain} = requests.combine
 
 // @ts-expect-error -- Parsing fixtures
-const single = responses.combine.single
+const single = combine.single
 
 /**
  * Every test suite exports their tests in the default object.

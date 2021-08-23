@@ -2,7 +2,10 @@ import {assert} from 'chai'
 
 import {ValidationError} from 'xrpl-local/common/errors'
 
-import {verifyAccountDelete} from '../../src/models/transactions/accountDelete'
+import {
+  AccountDelete,
+  verifyAccountDelete
+} from '../../src/models/transactions/accountDelete'
 
 /**
  * AccountDelete Transaction Verification Testing.
@@ -10,8 +13,10 @@ import {verifyAccountDelete} from '../../src/models/transactions/accountDelete'
  * Providing runtime verification testing for each specific transaction type.
  */
 describe('AccountDelete Transaction Verification', function () {
-  it(`verifies valid AccountDelete`, () => {
-    const validAccountDelete = {
+  let accountDelete: AccountDelete
+
+  beforeEach(function () {
+    accountDelete = {
       TransactionType: 'AccountDelete',
       Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
       Destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
@@ -19,57 +24,38 @@ describe('AccountDelete Transaction Verification', function () {
       Fee: '5000000',
       Sequence: 2470665,
       Flags: 2147483648
-    } as any
-
-    assert.doesNotThrow(() => verifyAccountDelete(validAccountDelete))
+    }
   })
 
-  it(`throws w/ missing Destination`, () => {
-    const invalidDestination = {
-      TransactionType: 'AccountDelete',
-      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
-      Fee: '5000000',
-      Sequence: 2470665,
-      Flags: 2147483648
-    } as any
+  it(`verifies valid AccountDelete`, function () {
+    assert.doesNotThrow(() => verifyAccountDelete(accountDelete))
+  })
+
+  it(`throws w/ missing Destination`, function () {
+    delete accountDelete.Destination
 
     assert.throws(
-      () => verifyAccountDelete(invalidDestination),
+      () => verifyAccountDelete(accountDelete),
       ValidationError,
       'AccountDelete: missing field Destination'
     )
   })
 
-  it(`throws w/ invalid Destination`, () => {
-    const invalidDestination = {
-      TransactionType: 'AccountDelete',
-      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
-      Destination: 65478965,
-      Fee: '5000000',
-      Sequence: 2470665,
-      Flags: 2147483648
-    } as any
+  it(`throws w/ invalid Destination`, function () {
+    accountDelete.Destination = 100
 
     assert.throws(
-      () => verifyAccountDelete(invalidDestination),
+      () => verifyAccountDelete(accountDelete),
       ValidationError,
       'AccountDelete: invalid Destination'
     )
   })
 
-  it(`throws w/ invalid DestinationTag`, () => {
-    const invalidDestinationTag = {
-      TransactionType: 'AccountDelete',
-      Account: 'rWYkbWkCeg8dP6rXALnjgZSjjLyih5NXm',
-      Destination: 'rPT1Sjq2YGrBMTttX4GZHjKu9dyfzbpAYe',
-      DestinationTag: 'gvftyujnbv',
-      Fee: '5000000',
-      Sequence: 2470665,
-      Flags: 2147483648
-    } as any
+  it(`throws w/ invalid DestinationTag`, function () {
+    accountDelete.DestinationTag = 'DTAG'
 
     assert.throws(
-      () => verifyAccountDelete(invalidDestinationTag),
+      () => verifyAccountDelete(accountDelete),
       ValidationError,
       'AccountDelete: invalid DestinationTag'
     )

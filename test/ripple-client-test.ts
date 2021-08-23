@@ -32,7 +32,7 @@ describe('Client [Test Runner]', function () {
 
   // Run all the tests:
   for (const {name: methodName, tests, config} of allTestSuites) {
-    describe(`client.${methodName}`, () => {
+    describe(`client.${methodName}`, function () {
       // Run each test that does not use an address.
       for (const [testName, fn] of tests) {
         if (fn.length === 1) {
@@ -42,7 +42,7 @@ describe('Client [Test Runner]', function () {
         }
       }
       // Run each test with a classic address.
-      describe(`[Classic Address]`, () => {
+      describe(`[Classic Address]`, function () {
         for (const [testName, fn] of tests) {
           if (fn.length === 2) {
             it(testName, function () {
@@ -53,7 +53,7 @@ describe('Client [Test Runner]', function () {
       })
       // Run each test with an X-address.
       if (!config.skipXAddress) {
-        describe(`[X-address]`, () => {
+        describe(`[X-address]`, function () {
           for (const [testName, fn] of tests) {
             if (fn.length === 2) {
               it(testName, function () {
@@ -71,7 +71,7 @@ describe('Client [Test Runner]', function () {
   for (const methodName of allPublicMethods) {
     if (!allTestedMethods.has(methodName)) {
       // TODO: Once migration is complete, remove `.skip()` so that missing tests are reported as failures.
-      it.skip(`${methodName} - no test suite found`, () => {
+      it.skip(`${methodName} - no test suite found`, function () {
         throw new Error(
           `Test file not found! Create file "test/client/${methodName}/index.ts".`
         )

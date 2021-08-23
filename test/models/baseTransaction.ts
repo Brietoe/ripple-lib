@@ -2,7 +2,10 @@ import {assert} from 'chai'
 
 import {ValidationError} from 'xrpl-local/common/errors'
 
-import {verifyBaseTransaction} from '../../src/models/transactions/common'
+import {
+  BaseTransaction,
+  verifyBaseTransaction
+} from '../../src/models/transactions/common'
 
 /**
  * Transaction Verification Testing.
@@ -10,8 +13,10 @@ import {verifyBaseTransaction} from '../../src/models/transactions/common'
  * Providing runtime verification testing for each specific transaction type.
  */
 describe('Transaction Verification', function () {
-  it(`Verifies all optional BaseTransaction`, () => {
-    const txJson = {
+  let txJson: BaseTransaction
+
+  beforeEach(function () {
+    txJson = {
       Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
       TransactionType: 'Payment',
       Fee: '12',
@@ -48,183 +53,141 @@ describe('Transaction Verification', function () {
         }
       ],
       SourceTag: 31,
-      SigningPublicKey:
+      SigningPubKey:
         '03680DD274EE55594F7244F489CD38CF3A5A1A4657122FB8143E185B2BA043DF36',
       TicketSequence: 10,
       TxnSignature:
         '3045022100C6708538AE5A697895937C758E99A595B57A16393F370F11B8D4C032E80B532002207776A8E85BB9FAF460A92113B9C60F170CD964196B1F084E0DAB65BAEC368B66'
     }
+  })
 
+  it(`Verifies all optional BaseTransaction`, function () {
     assert.doesNotThrow(() => verifyBaseTransaction(txJson))
   })
 
-  it(`Verifies only required BaseTransaction`, () => {
-    const txJson = {
+  it(`Verifies only required BaseTransaction`, function () {
+    const onlyRequired: BaseTransaction = {
       Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
       TransactionType: 'Payment'
     }
 
-    assert.doesNotThrow(() => verifyBaseTransaction(txJson))
+    assert.doesNotThrow(() => verifyBaseTransaction(onlyRequired))
   })
 
-  it(`Handles invalid Fee`, () => {
-    const invalidFee = {
-      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
-      TransactionType: 'Payment',
-      Fee: 1000
-    } as any
+  it(`Handles invalid Fee`, function () {
+    txJson.Fee = 1000
 
     assert.throws(
-      () => verifyBaseTransaction(invalidFee),
+      () => verifyBaseTransaction(txJson),
       ValidationError,
       'BaseTransaction: invalid Fee'
     )
   })
 
-  it(`Handles invalid Sequence`, () => {
-    const invalidSeq = {
-      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
-      TransactionType: 'Payment',
-      Sequence: '145'
-    } as any
+  it(`Handles invalid Sequence`, function () {
+    txJson.Sequence = '1000'
 
     assert.throws(
-      () => verifyBaseTransaction(invalidSeq),
+      () => verifyBaseTransaction(txJson),
       ValidationError,
       'BaseTransaction: invalid Sequence'
     )
   })
 
-  it(`Handles invalid AccountTxnID`, () => {
-    const invalidID = {
-      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
-      TransactionType: 'Payment',
-      AccountTxnID: ['WRONG']
-    } as any
+  it(`Handles invalid AccountTxnID`, function () {
+    txJson.AccountTxnID = ['INCORRECT']
 
     assert.throws(
-      () => verifyBaseTransaction(invalidID),
+      () => verifyBaseTransaction(txJson),
       ValidationError,
       'BaseTransaction: invalid AccountTxnID'
     )
   })
 
-  it(`Handles invalid LastLedgerSequence`, () => {
-    const invalidLastLedgerSequence = {
-      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
-      TransactionType: 'Payment',
-      LastLedgerSequence: '1000'
-    } as any
+  it(`Handles invalid LastLedgerSequence`, function () {
+    txJson.LastLedgerSequence = '1000'
 
     assert.throws(
-      () => verifyBaseTransaction(invalidLastLedgerSequence),
+      () => verifyBaseTransaction(txJson),
       ValidationError,
       'BaseTransaction: invalid LastLedgerSequence'
     )
   })
 
-  it(`Handles invalid SourceTag`, () => {
-    const invalidSourceTag = {
-      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
-      TransactionType: 'Payment',
-      SourceTag: ['ARRAY']
-    } as any
+  it(`Handles invalid SourceTag`, function () {
+    txJson.SourceTag = ['ARRAY']
 
     assert.throws(
-      () => verifyBaseTransaction(invalidSourceTag),
+      () => verifyBaseTransaction(txJson),
       ValidationError,
       'BaseTransaction: invalid SourceTag'
     )
   })
 
-  it(`Handles invalid SigningPubKey`, () => {
-    const invalidSigningPubKey = {
-      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
-      TransactionType: 'Payment',
-      SigningPubKey: 1000
-    } as any
+  it(`Handles invalid SigningPubKey`, function () {
+    txJson.SigningPubKey = 1000
 
     assert.throws(
-      () => verifyBaseTransaction(invalidSigningPubKey),
+      () => verifyBaseTransaction(txJson),
       ValidationError,
       'BaseTransaction: invalid SigningPubKey'
     )
   })
 
-  it(`Handles invalid TicketSequence`, () => {
-    const invalidTicketSequence = {
-      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
-      TransactionType: 'Payment',
-      TicketSequence: '1000'
-    } as any
+  it(`Handles invalid TicketSequence`, function () {
+    txJson.TicketSequence = '1000'
 
     assert.throws(
-      () => verifyBaseTransaction(invalidTicketSequence),
+      () => verifyBaseTransaction(txJson),
       ValidationError,
       'BaseTransaction: invalid TicketSequence'
     )
   })
 
-  it(`Handles invalid TxnSignature`, () => {
-    const invalidTxnSignature = {
-      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
-      TransactionType: 'Payment',
-      TxnSignature: 1000
-    } as any
+  it(`Handles invalid TxnSignature`, function () {
+    txJson.TxnSignature = 1000
 
     assert.throws(
-      () => verifyBaseTransaction(invalidTxnSignature),
+      () => verifyBaseTransaction(txJson),
       ValidationError,
       'BaseTransaction: invalid TxnSignature'
     )
   })
 
-  it(`Handles invalid Signers`, () => {
-    const invalidSigners = {
-      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
-      TransactionType: 'Payment',
-      Signers: []
-    } as any
+  it(`Handles invalid Signers`, function () {
+    txJson.Signers = []
 
     assert.throws(
-      () => verifyBaseTransaction(invalidSigners),
+      () => verifyBaseTransaction(txJson),
       ValidationError,
       'BaseTransaction: invalid Signers'
     )
 
-    const invalidSigners2 = {
-      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
-      TransactionType: 'Payment',
-      Signers: [
-        {
-          Account: 'r....'
-        }
-      ]
-    } as any
+    txJson.Signers = [
+      {
+        Account: 'r....'
+      }
+    ]
 
     assert.throws(
-      () => verifyBaseTransaction(invalidSigners2),
+      () => verifyBaseTransaction(txJson),
       ValidationError,
       'BaseTransaction: invalid Signers'
     )
   })
 
-  it(`Handles invalid Memo`, () => {
-    const invalidMemo = {
-      Account: 'r97KeayHuEsDwyU1yPBVtMLLoQr79QcRFe',
-      TransactionType: 'Payment',
-      Memos: [
-        {
-          Memo: {
-            MemoData: 'HI',
-            Address: 'WRONG'
-          }
+  it(`Handles invalid Memo`, function () {
+    txJson.Memos = [
+      {
+        Memo: {
+          MemoData: 'HI',
+          Address: 'WRONG'
         }
-      ]
-    } as any
+      }
+    ]
 
     assert.throws(
-      () => verifyBaseTransaction(invalidMemo),
+      () => verifyBaseTransaction(txJson),
       ValidationError,
       'BaseTransaction: invalid Memos'
     )

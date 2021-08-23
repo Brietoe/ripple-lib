@@ -1,10 +1,11 @@
 import https = require('https')
 
+import {isValidClassicAddress} from 'ripple-address-codec'
+
 import {Client} from '..'
 import {errors} from '../common'
 import {RippledError} from '../common/errors'
-import {isValidAddress} from '../common/schema-validator'
-import {GeneratedAddress} from '../offline/generate-address'
+import {GeneratedAddress} from '../offline/generateAddress'
 
 export interface FaucetWallet {
   account: GeneratedAddress
@@ -41,7 +42,7 @@ async function generateFaucetWallet(
   const faucetUrl = getFaucetUrl(this)
 
   // If the user provides an existing wallet to fund
-  if (address && isValidAddress(address)) {
+  if (address && isValidClassicAddress(address)) {
     // Create the POST request body
     body = new TextEncoder().encode(
       JSON.stringify({

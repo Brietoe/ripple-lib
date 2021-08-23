@@ -46,7 +46,54 @@ module.exports = {
         max: 5,
         ignoreTypeImports: true
       }
+    ],
+    // Removes comments and blank lines from the max-line rules
+    'max-lines-per-function': [
+      'warn',
+      {
+        max: 50,
+        skipBlankLines: true,
+        skipComments: true
+      }
+    ],
+    'max-lines': [
+      'warn',
+      {
+        max: 250,
+        skipBlankLines: true,
+        skipComments: true
+      }
     ]
   },
-  overrides: []
+  overrides: [
+    {
+      files: ['test/**/*.ts'],
+      rules: {
+        // Removed the max for test files and test helper files, since tests usually need to import more things
+        'import/max-dependencies': 'off',
+
+        // describe blocks count as a function in Mocha tests, and can be insanely long
+        'max-lines-per-function': 'off',
+
+        // Tests can be very long turns off max-line count
+        'max-lines': 'off',
+
+        // We have lots of statements in tests
+        'max-statements': 'off',
+
+        // We have lots of magic numbers in tests
+        'no-magic-number': 'off'
+      }
+    },
+    {
+      files: ['.eslintrc.js', 'jest.config.js'],
+      rules: {
+        // Removed no-commonjs requirement as eslint must be in common js format
+        'import/no-commonjs': 'off',
+
+        // Removed this as eslint prevents us from doing this differently
+        'import/unambiguous': 'off'
+      }
+    }
+  ]
 }

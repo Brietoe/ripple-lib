@@ -1,8 +1,8 @@
-import {Client} from '..'
+import type {Client} from '..'
 import * as common from '../common'
 import {LedgerStream} from '../models/methods'
 
-function getLedgerVersion(this: Client): Promise<number> {
+async function getLedgerVersion(this: Client): Promise<number> {
   return this.connection.getLedgerVersion()
 }
 

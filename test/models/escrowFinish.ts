@@ -12,7 +12,7 @@ import {verifyEscrowFinish} from '../../src/models/transactions/escrowFinish'
 describe('EscrowFinish Transaction Verification', function () {
   let escrow
 
-  beforeEach(() => {
+  beforeEach(function () {
     escrow = {
       Account: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
       TransactionType: 'EscrowFinish',
@@ -23,18 +23,18 @@ describe('EscrowFinish Transaction Verification', function () {
       Fulfillment: 'A0028000'
     }
   })
-  it(`verifies valid EscrowFinish`, () => {
+  it(`verifies valid EscrowFinish`, function () {
     assert.doesNotThrow(() => verifyEscrowFinish(escrow))
   })
 
-  it(`verifies valid EscrowFinish w/o optional`, () => {
+  it(`verifies valid EscrowFinish w/o optional`, function () {
     delete escrow.Condition
     delete escrow.Fulfillment
 
     assert.doesNotThrow(() => verifyEscrowFinish(escrow))
   })
 
-  it(`throws w/ invalid Owner`, () => {
+  it(`throws w/ invalid Owner`, function () {
     escrow.Owner = 0x15415253
 
     assert.throws(
@@ -44,7 +44,7 @@ describe('EscrowFinish Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid OfferSequence`, () => {
+  it(`throws w/ invalid OfferSequence`, function () {
     escrow.OfferSequence = '10'
 
     assert.throws(
@@ -54,7 +54,7 @@ describe('EscrowFinish Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid Condition`, () => {
+  it(`throws w/ invalid Condition`, function () {
     escrow.Condition = 10
 
     assert.throws(
@@ -64,7 +64,7 @@ describe('EscrowFinish Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid Fulfillment`, () => {
+  it(`throws w/ invalid Fulfillment`, function () {
     escrow.Fulfillment = 0x142341
 
     assert.throws(

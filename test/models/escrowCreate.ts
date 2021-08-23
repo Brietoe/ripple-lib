@@ -12,7 +12,7 @@ import {verifyEscrowCreate} from '../../src/models/transactions/escrowCreate'
 describe('EscrowCreate Transaction Verification', function () {
   let escrow
 
-  beforeEach(() => {
+  beforeEach(function () {
     escrow = {
       Account: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
       TransactionType: 'EscrowCreate',
@@ -27,11 +27,11 @@ describe('EscrowCreate Transaction Verification', function () {
     }
   })
 
-  it(`verifies valid EscrowCreate`, () => {
+  it(`verifies valid EscrowCreate`, function () {
     assert.doesNotThrow(() => verifyEscrowCreate(escrow))
   })
 
-  it(`Missing amount`, () => {
+  it(`Missing amount`, function () {
     delete escrow.Amount
 
     assert.throws(
@@ -41,7 +41,7 @@ describe('EscrowCreate Transaction Verification', function () {
     )
   })
 
-  it(`Missing destination`, () => {
+  it(`Missing destination`, function () {
     delete escrow.Destination
 
     assert.throws(
@@ -51,7 +51,7 @@ describe('EscrowCreate Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid Destination`, () => {
+  it(`throws w/ invalid Destination`, function () {
     escrow.Destination = 10
 
     assert.throws(
@@ -61,7 +61,7 @@ describe('EscrowCreate Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid Amount`, () => {
+  it(`throws w/ invalid Amount`, function () {
     escrow.Amount = 1000
 
     assert.throws(
@@ -71,7 +71,7 @@ describe('EscrowCreate Transaction Verification', function () {
     )
   })
 
-  it(`invalid CancelAfter`, () => {
+  it(`invalid CancelAfter`, function () {
     escrow.CancelAfter = '100'
 
     assert.throws(
@@ -81,7 +81,7 @@ describe('EscrowCreate Transaction Verification', function () {
     )
   })
 
-  it(`invalid FinishAfter`, () => {
+  it(`invalid FinishAfter`, function () {
     escrow.FinishAfter = '1000'
 
     assert.throws(
@@ -91,7 +91,7 @@ describe('EscrowCreate Transaction Verification', function () {
     )
   })
 
-  it(`invalid Condition`, () => {
+  it(`invalid Condition`, function () {
     escrow.Condition = 0x141243
 
     assert.throws(
@@ -101,7 +101,7 @@ describe('EscrowCreate Transaction Verification', function () {
     )
   })
 
-  it(`invalid DestinationTag`, () => {
+  it(`invalid DestinationTag`, function () {
     escrow.DestinationTag = '100'
 
     assert.throws(
@@ -111,7 +111,7 @@ describe('EscrowCreate Transaction Verification', function () {
     )
   })
 
-  it(`Missing both CancelAfter and FinishAfter`, () => {
+  it(`Missing both CancelAfter and FinishAfter`, function () {
     delete escrow.CancelAfter
     delete escrow.FinishAfter
 
@@ -122,7 +122,7 @@ describe('EscrowCreate Transaction Verification', function () {
     )
   })
 
-  it(`Missing both Condition and FinishAfter`, () => {
+  it(`Missing both Condition and FinishAfter`, function () {
     delete escrow.Condition
     delete escrow.FinishAfter
 

@@ -458,4 +458,5 @@ class Connection extends EventEmitter {
     )
   }
 }
+
 export default Connection

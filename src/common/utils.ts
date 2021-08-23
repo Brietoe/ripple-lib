@@ -1,29 +1,34 @@
 import BigNumber from 'bignumber.js'
-import * as _ from 'lodash'
 import {xAddressToClassicAddress} from 'ripple-address-codec'
 import {deriveKeypair} from 'ripple-keypairs'
 
+import {Amount} from '../models/common'
+
 import {ValidationError} from './errors'
-import {RippledAmount} from './types/objects'
+
+const XRP_TO_UNIX_DIFF = 0x386d4380
 
 /**
+ * Check if secret is valid.
  *
- * @param secret
- * @returns
+ * @param secret - Secret to test.
+ * @returns True if secret is valid.
  */
 function isValidSecret(secret: string): boolean {
   try {
     deriveKeypair(secret)
     return true
-  } catch (err) {
+  } catch (_err) {
     return false
   }
 }
 
 /**
+ * Converts Drops to XRP.
  *
- * @param drops
- * @returns
+ * @param drops - Number of drops.
+ * @returns Amount in XRP.
+ * @throws When drops is invalid.
  */
 function dropsToXrp(drops: BigNumber.Value): string {
   if (typeof drops === 'string') {
@@ -67,9 +72,10 @@ function dropsToXrp(drops: BigNumber.Value): string {
 }
 
 /**
+ * Converts XRP Amount to drops.
  *
- * @param xrp
- * @returns
+ * @param xrp - XRP to convert to drops.
+ * @returns Amount in drops.
  */
 function xrpToDrops(xrp: BigNumber.Value): string {
   if (typeof xrp === 'string') {
@@ -122,7 +128,7 @@ function xrpToDrops(xrp: BigNumber.Value): string {
     .toString(10)
 }
 
-function toRippledAmount(amount: RippledAmount): RippledAmount {
+function toRippledAmount(amount: Amount): Amount {
   if (typeof amount === 'string') {
     return amount
   }
@@ -172,36 +178,64 @@ function convertKeysFromSnakeCaseToCamelCase(obj: any): any {
   return obj
 }
 
-function removeUndefined<T extends object>(obj: T): T {
-  return _.omitBy(obj, (value) => value == null) as T
+/**
+ * Remove undefined values from an object.
+ *
+ * @param obj - Object to remove undefined.
+ * @returns Object without Undefined values.
+ */
+function removeUndefined(
+  obj: Record<string, undefined | unknown>
+): Record<string, unknown> {
+  const newObj = {...obj}
+
+  Object.entries(obj).forEach(([key, val]) => {
+    if (val == null) {
+      delete newObj[key]
+    }
+  })
+
+  return newObj
 }
 
 /**
- * @param rpepoch - (seconds since 1/1/2000 GMT).
+ * Convert a XRP timestamp to a Unix Timestamp.
+ *
+ * @param xrpepoch - (seconds since 1/1/2000 GMT).
  * @returns Ms since unix epoch.
  */
-function rippleToUnixTimestamp(rpepoch: number): number {
-  return (rpepoch + 0x386d4380) * 1000
+function xrpToUnixTimestamp(xrpepoch: number): number {
+  return (xrpepoch + XRP_TO_UNIX_DIFF) * 1000
 }
 
 /**
+ * Converts a unix timestamp to an XRP timestamp.
+ *
  * @param timestamp - (ms since unix epoch).
  * @returns Seconds since ripple epoch (1/1/2000 GMT).
  */
-function unixToRippleTimestamp(timestamp: number): number {
-  return Math.round(timestamp / 1000) - 0x386d4380
-}
-
-function rippleTimeToISO8601(rippleTime: number): string {
-  return new Date(rippleToUnixTimestamp(rippleTime)).toISOString()
+function unixToXRPTimestamp(timestamp: number): number {
+  return Math.round(timestamp / 1000) - XRP_TO_UNIX_DIFF
 }
 
 /**
- * @param iso8601 - International standard date format.
- * @returns Seconds since ripple epoch (1/1/2000 GMT).
+ * Converts seconds since XRP epoch to ISO8601 format.
+ *
+ * @param xrpTime - XRP time to convert to ISO8601.
+ * @returns XRP timestamp in ISO8601 form.
  */
-function iso8601ToRippleTime(iso8601: string): number {
-  return unixToRippleTimestamp(Date.parse(iso8601))
+function xrpTimeToISO8601(xrpTime: number): string {
+  return new Date(xrpToUnixTimestamp(xrpTime)).toISOString()
+}
+
+/**
+ * Convert an iso8601 timestamp to XRP time.
+ *
+ * @param iso8601 - International standard date format.
+ * @returns Seconds since XRP epoch (1/1/2000 GMT).
+ */
+function iso8601ToXRPTime(iso8601: string): number {
+  return unixToXRPTimestamp(Date.parse(iso8601))
 }
 
 export {
@@ -210,7 +244,7 @@ export {
   toRippledAmount,
   convertKeysFromSnakeCaseToCamelCase,
   removeUndefined,
-  rippleTimeToISO8601,
-  iso8601ToRippleTime,
+  xrpTimeToISO8601,
+  iso8601ToXRPTime,
   isValidSecret
 }

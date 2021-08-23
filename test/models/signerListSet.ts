@@ -12,7 +12,7 @@ import {verifySignerListSet} from '../../src/models/transactions/signerListSet'
 describe('SignerListSet Transaction Verification', function () {
   let SignerListSetTx
 
-  beforeEach(() => {
+  beforeEach(function () {
     SignerListSetTx = {
       Flags: 0,
       TransactionType: 'SignerListSet',
@@ -42,11 +42,11 @@ describe('SignerListSet Transaction Verification', function () {
     } as any
   })
 
-  it(`verifies valid SignerListSet`, () => {
+  it(`verifies valid SignerListSet`, function () {
     assert.doesNotThrow(() => verifySignerListSet(SignerListSetTx))
   })
 
-  it(`throws w/ missing SignerQuorum`, () => {
+  it(`throws w/ missing SignerQuorum`, function () {
     SignerListSetTx.SignerQuorum = undefined
 
     assert.throws(
@@ -56,7 +56,7 @@ describe('SignerListSet Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ empty SignerEntries`, () => {
+  it(`throws w/ empty SignerEntries`, function () {
     SignerListSetTx.SignerEntries = []
 
     assert.throws(
@@ -66,7 +66,7 @@ describe('SignerListSet Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid SignerEntries`, () => {
+  it(`throws w/ invalid SignerEntries`, function () {
     SignerListSetTx.SignerEntries = 'khgfgyhujk'
 
     assert.throws(

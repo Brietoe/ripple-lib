@@ -1,5 +1,4 @@
 import assert from 'assert-diff'
-
 import {LedgerData} from 'xrpl-local/common/types/objects'
 
 import {assertRejects, TestSuite} from '../../utils'

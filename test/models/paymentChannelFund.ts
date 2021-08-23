@@ -12,7 +12,7 @@ import {verifyPaymentChannelFund} from '../../src/models/transactions/paymentCha
 describe('PaymentChannelFund Transaction Verification', function () {
   let channel
 
-  beforeEach(() => {
+  beforeEach(function () {
     channel = {
       Account: 'rf1BiGeXwwQoi8Z2ueFYTEXSwuJYfV2Jpn',
       TransactionType: 'PaymentChannelFund',
@@ -23,17 +23,17 @@ describe('PaymentChannelFund Transaction Verification', function () {
     }
   })
 
-  it(`verifies valid PaymentChannelFund`, () => {
+  it(`verifies valid PaymentChannelFund`, function () {
     assert.doesNotThrow(() => verifyPaymentChannelFund(channel))
   })
 
-  it(`verifies valid PaymentChannelFund w/o optional`, () => {
+  it(`verifies valid PaymentChannelFund w/o optional`, function () {
     delete channel.Expiration
 
     assert.doesNotThrow(() => verifyPaymentChannelFund(channel))
   })
 
-  it(`throws w/ missing Amount`, () => {
+  it(`throws w/ missing Amount`, function () {
     delete channel.Amount
 
     assert.throws(
@@ -43,7 +43,7 @@ describe('PaymentChannelFund Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ missing Channel`, () => {
+  it(`throws w/ missing Channel`, function () {
     delete channel.Channel
 
     assert.throws(
@@ -53,7 +53,7 @@ describe('PaymentChannelFund Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid Amount`, () => {
+  it(`throws w/ invalid Amount`, function () {
     channel.Amount = 100
 
     assert.throws(
@@ -63,7 +63,7 @@ describe('PaymentChannelFund Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid Channel`, () => {
+  it(`throws w/ invalid Channel`, function () {
     channel.Channel = 1000
 
     assert.throws(
@@ -73,7 +73,7 @@ describe('PaymentChannelFund Transaction Verification', function () {
     )
   })
 
-  it(`throws w/ invalid Expiration`, () => {
+  it(`throws w/ invalid Expiration`, function () {
     channel.Expiration = '1000'
 
     assert.throws(
