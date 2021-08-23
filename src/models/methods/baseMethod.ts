@@ -13,7 +13,7 @@ interface Warning {
 }
 
 export interface BaseResponse {
-  id: number | string
+  id?: number | string
   status: 'success' | 'error' | string
   type: 'response' | string
   result: any

@@ -6,8 +6,9 @@ import {deriveKeypair, generateSeed, verify} from 'ripple-keypairs'
 import ECDSA from './common/ecdsa'
 import {ValidationError} from './common/errors'
 import {SignedTransaction} from './common/types/objects'
+import type {Transaction} from './models/transactions'
 import {signOffline} from './transaction/sign'
-import {SignOptions} from './transaction/types'
+import type {SignOptions} from './transaction/types'
 
 /**
  * A utility for deriving a wallet composed of a keypair (publicKey/privateKey).
@@ -15,12 +16,18 @@ import {SignOptions} from './transaction/types'
  * It provides functionality to sign/verify transactions offline.
  */
 class Wallet {
-  readonly publicKey: string
-  readonly privateKey: string
   private static readonly defaultAlgorithm: ECDSA = ECDSA.ed25519
   private static readonly defaultDerivationPath: string = "m/44'/144'/0'/0/0"
+  public readonly publicKey: string
+  public readonly privateKey: string
 
-  constructor(publicKey: string, privateKey: string) {
+  /**
+   * Construct a Wallet from a publicKey privateKey pair.
+   *
+   * @param publicKey - Public key owned by this wallet.
+   * @param privateKey - Private key owned by this wallet.
+   */
+  public constructor(publicKey: string, privateKey: string) {
     this.publicKey = publicKey
     this.privateKey = privateKey
   }
@@ -32,7 +39,7 @@ class Wallet {
    * @param algorithm - The digital signature algorithm to generate an address for.
    * @returns A Wallet derived from a seed.
    */
-  static fromSeed(
+  public static fromSeed(
     seed: string,
     algorithm: ECDSA = Wallet.defaultAlgorithm
   ): Wallet {
@@ -45,8 +52,9 @@ class Wallet {
    * @param mnemonic - A string consisting of words (whitespace delimited) used to derive a wallet.
    * @param derivationPath - The path to derive a keypair (publicKey/privateKey) from a seed (that was converted from a mnemonic).
    * @returns A Wallet derived from a mnemonic.
+   * @throws When unable to derive keypair from mnemonic.
    */
-  static fromMnemonic(
+  public static fromMnemonic(
     mnemonic: string,
     derivationPath: string = Wallet.defaultDerivationPath
   ): Wallet {
@@ -71,7 +79,7 @@ class Wallet {
    * @param algorithm - The digital signature algorithm to generate an address for.
    * @returns A Wallet derived from an entropy.
    */
-  static fromEntropy(
+  public static fromEntropy(
     entropy: Uint8Array | number[],
     algorithm: ECDSA = Wallet.defaultAlgorithm
   ): Wallet {
@@ -83,10 +91,23 @@ class Wallet {
     return Wallet.deriveWallet(seed, algorithm)
   }
 
+  /**
+   * Convert Buffer to hex string.
+   *
+   * @param buffer - Construct hex string from buffer.
+   * @returns Uppercase hex representation of buffer.
+   */
   private static hexFromBuffer(buffer: Buffer): string {
     return buffer.toString('hex').toUpperCase()
   }
 
+  /**
+   * Derives a wallet from a seed and an algorithm.
+   *
+   * @param seed - Seed used to derive wallet.
+   * @param algorithm - Algorithm used to derive Wallet.
+   * @returns Wallet derived from seed.
+   */
   private static deriveWallet(
     seed: string,
     algorithm: ECDSA = Wallet.defaultAlgorithm
@@ -102,8 +123,8 @@ class Wallet {
    * @param options - Options to include for signing.
    * @returns A signed transaction.
    */
-  signTransaction(
-    transaction: any, // TODO: transaction should be typed with Transaction type.
+  public signTransaction(
+    transaction: Transaction,
     options: SignOptions = {signAs: ''}
   ): SignedTransaction {
     return signOffline(this, JSON.stringify(transaction), options)
@@ -115,7 +136,7 @@ class Wallet {
    * @param signedTransaction - A signed transaction (hex string of signTransaction result) to be verified offline.
    * @returns Returns true if a signedTransaction is valid.
    */
-  verifyTransaction(signedTransaction: string): boolean {
+  public verifyTransaction(signedTransaction: string): boolean {
     const tx = decode(signedTransaction)
     const messageHex: string = encodeForSigning(tx)
     const signature = tx.TxnSignature

@@ -1,11 +1,10 @@
-import assert from 'assert-diff'
 import BigNumber from 'bignumber.js'
+import {expect} from 'chai'
 
-import {Client} from 'xrpl-local'
-
+import {Client} from '../../../src'
 import requests from '../../fixtures/requests'
 import responses from '../../fixtures/responses'
-import {TestSuite} from '../../utils'
+import type {TestSuite} from '../../utils'
 
 function checkSortingOfOrders(orders) {
   let previousRate = '0'
@@ -43,7 +42,7 @@ function checkSortingOfOrders(orders) {
  * - Check out the "TestSuite" type for documentation on the interface.
  * - Check out "test/client/index.ts" for more information about the test runner.
  */
-export default <TestSuite>{
+const tests: TestSuite = {
   'normal': async (client, address) => {
     const orderbookInfo = {
       base: {
@@ -56,37 +55,31 @@ export default <TestSuite>{
       }
     }
 
-    await Promise.all([
-      client.request('book_offers', {
-        taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.base),
-        taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
-        ledger_index: 'validated',
-        limit: 20,
-        taker: address
-      }),
-      client.request('book_offers', {
-        taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
-        taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.base),
-        ledger_index: 'validated',
-        limit: 20,
-        taker: address
-      })
-    ]).then(([directOfferResults, reverseOfferResults]) => {
-      const directOffers = directOfferResults
-        ? directOfferResults.offers
-        : [].flat()
-      const reverseOffers = reverseOfferResults
-        ? reverseOfferResults.offers
-        : [].flat()
-      const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
-        ...directOffers,
-        ...reverseOffers
-      ])
-      assert.deepEqual(orderbook, responses.getOrderbook.normal)
+    const directOffers = await client.request('book_offers', {
+      taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.base),
+      taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
+      ledger_index: 'validated',
+      limit: 20,
+      taker: address
     })
+
+    const reverseOffers = await client.request('book_offers', {
+      taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
+      taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.base),
+      ledger_index: 'validated',
+      limit: 20,
+      taker: address
+    })
+
+    const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
+      ...directOffers,
+      ...reverseOffers
+    ])
+
+    expect(orderbook).to.equal(responses.getOrderbook.normal)
   },
 
-  'with XRP': async (client, address) => {
+  'with XRP': async (client: Client, address: string) => {
     const orderbookInfo = {
       base: {
         currency: 'USD',
@@ -97,39 +90,41 @@ export default <TestSuite>{
       }
     }
 
-    await Promise.all([
-      client.request('book_offers', {
-        taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.base),
-        taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
-        ledger_index: 'validated',
-        limit: 20,
-        taker: address
-      }),
-      client.request('book_offers', {
-        taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
-        taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.base),
-        ledger_index: 'validated',
-        limit: 20,
-        taker: address
-      })
-    ]).then(([directOfferResults, reverseOfferResults]) => {
-      const directOffers = directOfferResults
-        ? directOfferResults.offers
-        : [].flat()
-      const reverseOffers = reverseOfferResults
-        ? reverseOfferResults.offers
-        : [].flat()
-      const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
-        ...directOffers,
-        ...reverseOffers
-      ])
-      assert.deepEqual(orderbook, responses.getOrderbook.withXRP)
+    const directOfferResults = await client.request('book_offers', {
+      taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.base),
+      taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
+      ledger_index: 'validated',
+      limit: 20,
+      taker: address
     })
+
+    const reverseOfferResults = client.request('book_offers', {
+      taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
+      taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.base),
+      ledger_index: 'validated',
+      limit: 20,
+      taker: address
+    })
+
+    const directOffers = directOfferResults
+      ? directOfferResults.offers
+      : [].flat()
+
+    const reverseOffers = reverseOfferResults
+      ? reverseOfferResults.offers
+      : [].flat()
+
+    const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
+      ...directOffers,
+      ...reverseOffers
+    ])
+
+    expect(orderbook).to.equal(responses.getOrderbook.withXRP)
   },
 
   'sample XRP/JPY book has orders sorted correctly': async (
-    client,
-    address
+    client: Client,
+    _address
   ) => {
     const orderbookInfo = {
       base: {
@@ -144,40 +139,42 @@ export default <TestSuite>{
 
     const myAddress = 'rE9qNjzJXpiUbVomdv7R4xhrXVeH2oVmGR'
 
-    await Promise.all([
-      client.request('book_offers', {
-        taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.base),
-        taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
-        ledger_index: 'validated',
-        limit: 400, // must match `test/fixtures/rippled/requests/1-taker_gets-XRP-taker_pays-JPY.json`
-        taker: myAddress
-      }),
-      client.request('book_offers', {
-        taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
-        taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.base),
-        ledger_index: 'validated',
-        limit: 400, // must match `test/fixtures/rippled/requests/2-taker_gets-JPY-taker_pays-XRP.json`
-        taker: myAddress
-      })
-    ]).then(([directOfferResults, reverseOfferResults]) => {
-      const directOffers = directOfferResults
-        ? directOfferResults.offers
-        : [].flat()
-      const reverseOffers = reverseOfferResults
-        ? reverseOfferResults.offers
-        : [].flat()
-      const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
-        ...directOffers,
-        ...reverseOffers
-      ])
-      assert.deepStrictEqual([], orderbook.bids)
-      return checkSortingOfOrders(orderbook.asks)
+    const directOfferResults = client.request('book_offers', {
+      taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.base),
+      taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
+      ledger_index: 'validated',
+      limit: 400, // must match `test/fixtures/rippled/requests/1-taker_gets-XRP-taker_pays-JPY.json`
+      taker: myAddress
     })
+
+    const reverseOfferResults = client.request('book_offers', {
+      taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
+      taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.base),
+      ledger_index: 'validated',
+      limit: 400, // must match `test/fixtures/rippled/requests/2-taker_gets-JPY-taker_pays-XRP.json`
+      taker: myAddress
+    })
+
+    const directOffers = directOfferResults
+      ? directOfferResults.offers
+      : [].flat()
+
+    const reverseOffers = reverseOfferResults
+      ? reverseOfferResults.offers
+      : [].flat()
+
+    const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
+      ...directOffers,
+      ...reverseOffers
+    ])
+
+    expect(orderbook.bids).to.equal([])
+    expect(checkSortingOfOrders(orderbook.asks)).to.equal(true)
   },
 
   'sample USD/XRP book has orders sorted correctly': async (
     client,
-    address
+    _address
   ) => {
     const orderbookInfo = {
       counter: {currency: 'XRP'},
@@ -375,3 +372,5 @@ export default <TestSuite>{
     })
   }
 }
+
+export default tests

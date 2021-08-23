@@ -43,7 +43,7 @@ import {
   computeEscrowHash,
   computePaymentChannelHash
 } from '../common/hashes'
-import RangeSet from '../common/rangeset'
+import RangeSet from '../common/rangeSet'
 import * as schemaValidator from '../common/schema-validator'
 import {getServerInfo, getFee} from '../common/serverInfo'
 import {

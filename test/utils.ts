@@ -4,18 +4,13 @@ import path from 'path'
 
 import {Client} from '../src'
 
-/**
- * The test function. It takes a Client object and then some other data to
- * test (currently: an address). May be called multiple times with different
- * arguments, to test different types of data.
- */
-type TestFn = (client: Client, address: string) => void | PromiseLike<void>
+import TestSuites from './client'
 
 /**
  * A suite of tests to run. Maps the test name to the test function.
  */
 export interface TestSuite {
-  [testName: string]: TestFn
+  [testName: string]: (client: Client, address: string) => void | Promise<void>
 }
 
 /**
@@ -26,7 +21,7 @@ export interface TestSuite {
  */
 interface LoadedTestSuite {
   name: string
-  tests: Array<[string, TestFn]>
+  tests: TestSuite
   config: {
     skipXAddress?: boolean
   }
@@ -74,11 +69,11 @@ export function loadTestSuites(): LoadedTestSuite[] {
       if (methodName.startsWith('.DS_Store')) {
         return null
       }
-      const testSuite: TestSuite = require(`./client/${methodName}`)
+      const testSuite: LoadedTestSuite = require(`./client/${methodName}`)
       const loaded: LoadedTestSuite = {
         name: methodName,
         config: testSuite.config,
-        tests: Object.entries(testSuite.default)
+        tests: testSuite.tests
       }
       return loaded
     })

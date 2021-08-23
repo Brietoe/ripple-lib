@@ -1,38 +1,32 @@
 import {Client, ClientOptions} from './client'
 
 class ClientBroadcast extends Client {
-  ledgerVersion: number | undefined = undefined
-  private readonly _clients: Client[]
+  public ledgerVersion: number | undefined = undefined
+  private readonly clients: Client[]
 
-  constructor(servers, options: ClientOptions = {}) {
+  /**
+   * Constructs a Broadcast client.
+   *
+   * @param servers - Servers to connect to.
+   * @param options - Client Options to specify connection details.
+   */
+  public constructor(servers: string[], options: ClientOptions = {}) {
     super(options)
 
     const clients: Client[] = servers.map(
-      (server) => new Client({...options, server})
+      (server: Client) => new Client(server, options)
     )
 
-    // exposed for testing
-    this._clients = clients
+    this.clients = clients
 
-    this.getMethodNames().forEach((name) => {
-      this[name] = function () {
-        // eslint-disable-line no-loop-func
-        return Promise.race(clients.map((client) => client[name](...arguments)))
+    this.getMethodNames().forEach((name: string) => {
+      this[name] = async (): Promise<Client> => {
+        return Promise.race(
+          this.clients.map((client) => client[name](...arguments))
+        )
       }
     })
 
-    // connection methods must be overridden to apply to all client instances
-    this.connect = async function () {
-      await Promise.all(clients.map((client) => client.connect()))
-    }
-    this.disconnect = async function () {
-      await Promise.all(clients.map((client) => client.disconnect()))
-    }
-    this.isConnected = function () {
-      return clients.map((client) => client.isConnected()).every(Boolean)
-    }
-
-    // synchronous methods are all passed directly to the first client instance
     const defaultClient = clients[0]
     const syncMethods = ['sign', 'generateAddress', 'computeLedgerHash']
     syncMethods.forEach((name) => {
@@ -47,7 +41,23 @@ class ClientBroadcast extends Client {
     })
   }
 
-  onLedgerEvent(ledger) {
+  public async connect(): Promise<void> {
+    await Promise.all(
+      this.clients.map(async (client: Client) => client.connect())
+    )
+  }
+
+  public async disconnect(): Promise<void> {
+    await Promise.all(
+      this.clients.map(async (client: Client) => client.disconnect())
+    )
+  }
+
+  public isConnected(): boolean {
+    return this.clients.map((client) => client.isConnected()).every(Boolean)
+  }
+
+  public onLedgerEvent(ledger: LedgerStream): void {
     if (
       ledger.ledgerVersion > this.ledgerVersion ||
       this.ledgerVersion == null
@@ -57,11 +67,16 @@ class ClientBroadcast extends Client {
     }
   }
 
-  getMethodNames() {
+  /**
+   * Gets names of all methods on clients.
+   *
+   * @returns Names of all client methods.
+   */
+  public getMethodNames(): string[] {
     const methodNames: string[] = []
-    const Client = this._clients[0]
-    for (const name of Object.getOwnPropertyNames(Client)) {
-      if (typeof Client[name] === 'function') {
+    const client: Client = this.clients[0]
+    for (const name of Object.getOwnPropertyNames(client)) {
+      if (typeof client[name] === 'function') {
         methodNames.push(name)
       }
     }
@@ -69,4 +84,4 @@ class ClientBroadcast extends Client {
   }
 }
 
-export {ClientBroadcast}
+export default ClientBroadcast

@@ -1,13 +1,17 @@
-import assert from 'assert'
+import path from 'path'
 
+import {assert} from 'chai'
 import puppeteer from 'puppeteer'
 
-describe('Browser Tests', () => {
-  it('Integration Tests', async () => {
+const FORTY_SECONDS = 40000
+
+describe('Browser Tests', function () {
+  it('Integration Tests', async function () {
     const browser = await puppeteer.launch({headless: true})
     try {
       const page = await browser.newPage().catch()
-      await page.goto(`file:///${__dirname}/../localintegrationrunner.html`)
+      const url = path.resolve('./../localintegrationrunner.html')
+      await page.goto(url)
 
       await page.waitForFunction(
         'document.querySelector("body").innerText.includes("submit multisigned transaction")'
@@ -22,11 +26,10 @@ describe('Browser Tests', () => {
 
       assert.equal(fails, 'failures: 0')
       assert.notEqual(passes, 'passes: 0')
-    } catch (err) {
-      console.log(err)
+    } catch (_err) {
       assert(false)
     } finally {
       await browser.close()
     }
-  }).timeout(40000)
+  }).timeout(FORTY_SECONDS)
 })

@@ -1,14 +1,14 @@
-import assert from 'assert-diff'
 import BigNumber from 'bignumber.js'
+import {assert, expect} from 'chai'
 
-import {TestSuite} from '../../utils'
+import type {TestSuite} from '../../utils'
 
 /**
  * Every test suite exports their tests in the default object.
  * - Check out the "TestSuite" type for documentation on the interface.
  * - Check out "test/client/index.ts" for more information about the test runner.
  */
-export default <TestSuite>{
+const tests: TestSuite = {
   'works with a typical amount': function (client) {
     const drops = client.xrpToDrops('2')
     assert.strictEqual(drops, '2000000', '2 XRP equals 2 million drops')

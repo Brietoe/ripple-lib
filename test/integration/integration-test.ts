@@ -1,12 +1,9 @@
-import assert from 'assert'
-
+import assert from 'chai'
 import _ from 'lodash'
 import {isValidClassicAddress} from 'ripple-address-codec'
 
-import {Client} from 'xrpl-local'
-import {errors} from 'xrpl-local/common'
-import {isValidSecret} from 'xrpl-local/common/utils'
-
+import type {Client} from '../../src'
+import isValidSecret from '../client/isValidSecret'
 import requests from '../fixtures/requests'
 
 import {payTo, ledgerAccept} from './utils'
@@ -20,14 +17,7 @@ const HOST = process.env.HOST ?? '0.0.0.0'
 const PORT = process.env.PORT ?? '6006'
 const serverUrl = `ws://${HOST}:${PORT}`
 
-console.log(serverUrl)
-
-function acceptLedger(client) {
-  return client.connection.request({command: 'ledger_accept'})
-}
-
 function verifyTransaction(testcase, hash, type, options, txData, address) {
-  console.log('VERIFY...')
   return testcase.client
     .getTransaction(hash, options)
     .then((data) => {

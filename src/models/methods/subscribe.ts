@@ -1,7 +1,7 @@
 import {Currency, StreamType} from '../common'
 import {TransactionMetadata} from '../common/transaction'
 
-import {BaseRequest, BaseResponse} from './baseMethod'
+import type {BaseRequest, BaseResponse} from './baseMethod'
 
 interface Book {
   taker_gets: Currency
@@ -23,7 +23,7 @@ export interface SubscribeRequest extends BaseRequest {
 }
 
 export interface SubscribeResponse extends BaseResponse {
-  result: any
+  result: LedgerStream
 }
 
 interface BaseStream {

@@ -1,5 +1,6 @@
-import assert from 'assert-diff'
+import {expect} from 'chai'
 
+import {RippleError} from '../../../src/common/errors'
 import {TestSuite} from '../../utils'
 
 /**
@@ -7,14 +8,17 @@ import {TestSuite} from '../../utils'
  * - Check out the "TestSuite" type for documentation on the interface.
  * - Check out "test/client/index.ts" for more information about the test runner.
  */
-export default <TestSuite>{
-  'RippleError with data': async (client, address) => {
-    const error = new client.errors.RippleError('_message_', '_data_')
-    assert.strictEqual(error.toString(), "[RippleError(_message_, '_data_')]")
+const tests: TestSuite = {
+  'RippleError with data': async (_client, _address) => {
+    const error = new RippleError('_message_', '_data_')
+
+    expect(error.toString()).to.equal("[RippleError(_message_, '_data_')]")
   },
 
-  'NotFoundError default message': async (client, address) => {
+  'NotFoundError default message': async (client, _address) => {
     const error = new client.errors.NotFoundError()
-    assert.strictEqual(error.toString(), '[NotFoundError(Not found)]')
+    expect(error.toString()).to.equal('[NotFoundError(Not found)]')
   }
 }
+
+export default tests
