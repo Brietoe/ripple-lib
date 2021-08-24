@@ -1,15 +1,15 @@
 import {assert, expect} from 'chai'
 import binary from 'ripple-binary-codec'
 
+import type {Client} from '../../../src'
 import {ValidationError} from '../../../src/common/errors'
 import requests from '../../fixtures/requests'
-import {combine} from '../../fixtures/responses'
+import responses from '../../fixtures/responses'
 import type {TestSuite} from '../../utils'
 
-const {setDomain} = requests.combine
+const setDomain = requests.combine.setDomain
 
-// @ts-expect-error -- Parsing fixtures
-const single = combine.single
+const single = responses.combine.single
 
 /**
  * Every test suite exports their tests in the default object.
@@ -17,12 +17,12 @@ const single = combine.single
  * - Check out "test/client/index.ts" for more information about the test runner.
  */
 const tests: TestSuite = {
-  'combine': async (client, _address) => {
+  'combine': (client: Client, _address) => {
     const combined = client.combine(setDomain)
     expect(combined).to.equal(single)
   },
 
-  'combine - different transactions': async (client, _address) => {
+  'combine - different transactions': async (client: Client, _address) => {
     const request = [setDomain[0]]
     const tx = binary.decode(setDomain[0])
     tx.Flags = 0

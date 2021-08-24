@@ -1,4 +1,4 @@
-import {assert, expect} from 'chai'
+import {expect} from 'chai'
 
 import type {Client} from '../../../src'
 import {TestSuite} from '../../utils'

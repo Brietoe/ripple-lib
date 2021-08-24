@@ -20,7 +20,7 @@ const tests: TestSuite = {
 
   'Client valid options': () => {
     const client = new Client({server: 'wss://s:1'})
-    const privateConnectionUrl = client.connection.url
+    const privateConnectionUrl = client.connection.getUrl()
     expect(privateConnectionUrl).to.equal('wss://s:1')
   },
 

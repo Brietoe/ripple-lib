@@ -1,12 +1,14 @@
 import responses from '../../fixtures/responses'
-import {assertRejects, assertResultMatch, TestSuite} from '../../utils'
+import {TestSuite} from '../../utils'
+
+export {expect} from 'chai'
 
 /**
  * Every test suite exports their tests in the default object.
  * - Check out the "TestSuite" type for documentation on the interface.
  * - Check out "test/client/index.ts" for more information about the test runner.
  */
-export default <TestSuite>{
+const tests: TestSuite = {
   'getAccountInfo': async (client, address) => {
     const result = await client.getAccountInfo(address)
     assertResultMatch(result, responses.getAccountInfo, 'getAccountInfo')
@@ -25,3 +27,5 @@ export default <TestSuite>{
     )
   }
 }
+
+export default tests

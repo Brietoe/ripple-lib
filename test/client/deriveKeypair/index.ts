@@ -39,3 +39,5 @@ const tests: TestSuite = {
     )
   }
 }
+
+export default tests

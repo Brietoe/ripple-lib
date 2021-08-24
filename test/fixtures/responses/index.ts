@@ -15,7 +15,7 @@ import withStateAsHashes from './get-ledger-with-state-as-hashes.json'
 import header from './get-ledger.json'
 import withXRPOrderBook from './get-orderbook-with-xrp.json'
 import normalOrderBook from './get-orderbook.json'
-import getOrders from './get-orders.json.json'
+import getOrders from './get-orders.json'
 import sendAll from './get-paths-send-all.json'
 import UsdToUsd from './get-paths-send-usd.json'
 import XrpToXrp from './get-paths-xrp-to-xrp.json'
@@ -100,23 +100,16 @@ import sellOrder from './prepare-order-sell.json'
 import ticketOrder from './prepare-order-ticket.json'
 import buyOrder from './prepare-order.json'
 import allOptionsPayment from './prepare-payment-all-options.json'
-import signersSettings from './prepare-settings-signers.json'
-import noSignerList from './prepare-settings-no-signer-list.json'
-import noWeights from './prepare-settings-no-weight.json'
-import normalSign from './sign.json'
-import ticketSign from './sign-ticket.json'
-import escrowSign from './sign-escrow.json'
-import signAsSign from './sign-as.json'
-import normalPayChanCreate from './prepare-payment-channel-create.json'
-import ticketPayChanCreate from './prepare-payment-channel-create-ticket.json'
-import fullPayChanCreate from './prepare-payment-channel-create-full.json'
-import normalPayChanFund from './prepare-payment-channel-fund.json'
-import ticketPayChanFund from './prepare-payment-channel-fund-ticket.json'
-import fullPayChanFund from './prepare-payment-channel-fund-full.json'
-import normalPayChanClaim from './prepare-payment-channel-claim.json'
-import ticketPayChanClaim from './prepare-payment-channel-claim-ticket.json'
-import renewPayChanClaim from './prepare-payment-channel-claim-renew.json'
 import closePayChanClaim from './prepare-payment-channel-claim-close.json'
+import renewPayChanClaim from './prepare-payment-channel-claim-renew.json'
+import ticketPayChanClaim from './prepare-payment-channel-claim-ticket.json'
+import normalPayChanClaim from './prepare-payment-channel-claim.json'
+import fullPayChanCreate from './prepare-payment-channel-create-full.json'
+import ticketPayChanCreate from './prepare-payment-channel-create-ticket.json'
+import normalPayChanCreate from './prepare-payment-channel-create.json'
+import fullPayChanFund from './prepare-payment-channel-fund-full.json'
+import ticketPayChanFund from './prepare-payment-channel-fund-ticket.json'
+import normalPayChanFund from './prepare-payment-channel-fund.json'
 import minAmountXRPXRPPayment from './prepare-payment-min-amount-xrp-xrp.json'
 import minAmountXRPPayment from './prepare-payment-min-amount-xrp.json'
 import minAmountPayment from './prepare-payment-min-amount.json'
@@ -132,10 +125,13 @@ import flagSet from './prepare-settings-flag-set.json'
 import flagsMultisign from './prepare-settings-multisign.json'
 import noInstructions from './prepare-settings-no-instructions.json'
 import noMaxLedgerVersion from './prepare-settings-no-maxledgerversion.json'
+import noSignerList from './prepare-settings-no-signer-list.json'
+import noWeights from './prepare-settings-no-weight.json'
 import regularKey from './prepare-settings-regular-key.json'
 import removeRegularKey from './prepare-settings-remove-regular-key.json'
 import setTransferRate from './prepare-settings-set-transfer-rate.json'
 import signedSettings from './prepare-settings-signed.json'
+import signersSettings from './prepare-settings-signers.json'
 import ticketSettings from './prepare-settings-ticket.json'
 import flagsSettings from './prepare-settings.json'
 import frozenTrustline from './prepare-trustline-frozen.json'
@@ -143,11 +139,15 @@ import issuedXAddressTrustline from './prepare-trustline-issuer-xaddress.json'
 import simpleTrustline from './prepare-trustline-simple.json'
 import ticketTrustline from './prepare-trustline-ticket.json'
 import complexTrustline from './prepare-trustline.json'
+import signAsSign from './sign-as.json'
+import escrowSign from './sign-escrow.json'
 import signPaymentChannelClaim from './sign-payment-channel-claim.json'
+import ticketSign from './sign-ticket.json'
+import normalSign from './sign.json'
 import submit from './submit.json'
 import trustlineItems from './trustline-item.json'
 
-function buildList(options) {
+function buildList(options: {item: any; count: number}): any[] {
   return new Array(options.count).fill(options.item)
 }
 
@@ -223,7 +223,7 @@ const getTransactions = {
 const getTrustlines = {
   filtered: filteredLines,
   moreThan400Items: buildList({
-    trustlineItems,
+    item: trustlineItems,
     count: 401
   }),
   all: allTrustlines,
@@ -358,4 +358,43 @@ const combine = {
   single: singleCombine
 }
 
-export {}
+const responses = {
+  generateAddress,
+  generateFaucetWallet,
+  generateXAddress,
+  getAccountInfo,
+  getAccountObjects,
+  getBalanceSheet,
+  getBalances,
+  getOrders,
+  getServerInfo,
+  getSettings,
+  ledgerEvent,
+  signPaymentChannelClaim,
+  submit,
+  getPaymentChannel,
+  getOrderbook,
+  getPaths,
+  getTransaction,
+  getTransactions,
+  getTrustlines,
+  getLedger,
+  prepareOrder,
+  prepareOrderCancellation,
+  preparePayment,
+  prepareSettings,
+  prepareCheckCreate,
+  prepareCheckCash,
+  prepareCheckCancel,
+  prepareEscrowCreation,
+  prepareEscrowExecution,
+  prepareEscrowCancellation,
+  preparePaymentChannelCreate,
+  preparePaymentChannelFund,
+  preparePaymentChannelClaim,
+  prepareTrustline,
+  sign,
+  combine
+}
+
+export default responses

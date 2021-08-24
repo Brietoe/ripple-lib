@@ -1,7 +1,9 @@
-import assert from 'assert-diff'
+import {assert, expect} from 'chai'
 
+import type {Client} from '../../../src'
 import ECDSA from '../../../src/common/ecdsa'
-import {GenerateAddressOptions} from '../../../src/offline/generate-address'
+import {UnexpectedError} from '../../../src/common/errors'
+import {GenerateAddressOptions} from '../../../src/offline/generateAddress'
 import responses from '../../fixtures/responses'
 import {TestSuite} from '../../utils'
 
@@ -12,18 +14,13 @@ const {generateAddress: RESPONSE_FIXTURES} = responses
  * - Check out the "TestSuite" type for documentation on the interface.
  * - Check out "test/client/index.ts" for more information about the test runner.
  */
-export default <TestSuite>{
-  'generateAddress': async (client) => {
-    // GIVEN entropy of all zeros
-    function random() {
-      return new Array(16).fill(0)
+const tests: TestSuite = {
+  'generateAddress': async (client: Client) => {
+    function random(): number[] {
+      return new Array<number>(16).fill(0)
     }
 
-    assert.deepEqual(
-      // WHEN generating an address
-      client.generateAddress({entropy: random()}),
-
-      // THEN we get the expected return value
+    expect(client.generateAddress({entropy: random()})).to.equal(
       RESPONSE_FIXTURES
     )
   },
@@ -31,8 +28,8 @@ export default <TestSuite>{
   'generateAddress invalid entropy': async (client) => {
     assert.throws(() => {
       // GIVEN entropy of 1 byte
-      function random() {
-        return new Array(1).fill(0)
+      function random(): number[] {
+        return new Array<number>(1).fill(0)
       }
 
       // WHEN generating an address
@@ -40,7 +37,7 @@ export default <TestSuite>{
 
       // THEN an UnexpectedError is thrown
       // because 16 bytes of entropy are required
-    }, client.errors.UnexpectedError)
+    }, UnexpectedError)
   },
 
   'generateAddress with no options object': async (client) => {
@@ -50,8 +47,8 @@ export default <TestSuite>{
     const account = client.generateAddress()
 
     // THEN we get an object with an address starting with 'r' and a secret starting with 's'
-    assert(account.address.startsWith('r'), 'Address must start with `r`')
-    assert(account.secret.startsWith('s'), 'Secret must start with `s`')
+    expect(account.address.startsWith('r')).to.equal(true)
+    expect(account.secret.startsWith('s')).to.equal(true)
   },
 
   'generateAddress with empty options object': async (client) => {
@@ -62,8 +59,8 @@ export default <TestSuite>{
     const account = client.generateAddress(options)
 
     // THEN we get an object with an address starting with 'r' and a secret starting with 's'
-    assert(account.address.startsWith('r'), 'Address must start with `r`')
-    assert(account.secret.startsWith('s'), 'Secret must start with `s`')
+    expect(account.address.startsWith('r')).to.equal(true)
+    expect(account.secret.startsWith('s')).to.equal(true)
   },
 
   'generateAddress with algorithm `ecdsa-secp256k1`': async (client) => {
@@ -74,17 +71,10 @@ export default <TestSuite>{
     const account = client.generateAddress(options)
 
     // THEN we get an object with an address starting with 'r' and a secret starting with 's' (not 'sEd')
-    assert(account.address.startsWith('r'), 'Address must start with `r`')
-    assert.deepEqual(
-      account.secret.slice(0, 1),
-      's',
-      `Secret ${account.secret} must start with 's'`
-    )
-    assert.notStrictEqual(
-      account.secret.slice(0, 3),
-      'sEd',
-      `secp256k1 secret ${account.secret} must not start with 'sEd'`
-    )
+    expect(account.address.startsWith('r')).to.equal(true)
+    expect(account.secret.startsWith('s')).to.equal(true)
+
+    expect(account.secret.startsWith('sEd')).to.equal(false)
   },
 
   'generateAddress with algorithm `ed25519`': async (client) => {
@@ -95,12 +85,8 @@ export default <TestSuite>{
     const account = client.generateAddress(options)
 
     // THEN we get an object with an address starting with 'r' and a secret starting with 'sEd'
-    assert(account.address.startsWith('r'), 'Address must start with `r`')
-    assert.deepEqual(
-      account.secret.slice(0, 3),
-      'sEd',
-      `Ed25519 secret ${account.secret} must start with 'sEd'`
-    )
+    expect(account.address.startsWith('r')).to.equal(true)
+    expect(account.secret.startsWith('sEd')).to.equal(true)
   },
 
   'generateAddress with algorithm `ecdsa-secp256k1` and given entropy': async (
@@ -116,7 +102,7 @@ export default <TestSuite>{
     const account = client.generateAddress(options)
 
     // THEN we get the expected return value
-    assert.deepEqual(account, responses.generateAddress)
+    expect(account).to.equal(responses.generateAddress)
   },
 
   'generateAddress with algorithm `ed25519` and given entropy': async (
@@ -132,7 +118,7 @@ export default <TestSuite>{
     const account = client.generateAddress(options)
 
     // THEN we get the expected return value
-    assert.deepEqual(account, {
+    expect(account).to.equal({
       // generateAddress return value always includes xAddress to encourage X-address adoption
       xAddress: 'X7xq1YJ4xmLSGGLhuakFQB9CebWYthQkgsvFC4LGFH871HB',
 
@@ -155,7 +141,7 @@ export default <TestSuite>{
       const account = client.generateAddress(options)
 
       // THEN we get the expected return value
-      assert.deepEqual(account, responses.generateAddress)
+      expect(account).to.equal(responses.generateAddress)
     },
 
   'generateAddress with algorithm `ed25519` and given entropy; include classic address':
@@ -171,7 +157,7 @@ export default <TestSuite>{
       const account = client.generateAddress(options)
 
       // THEN we get the expected return value
-      assert.deepEqual(account, {
+      expect(account).to.equal({
         // generateAddress return value always includes xAddress to encourage X-address adoption
         xAddress: 'X7xq1YJ4xmLSGGLhuakFQB9CebWYthQkgsvFC4LGFH871HB',
 
@@ -196,10 +182,10 @@ export default <TestSuite>{
 
       // THEN we get the expected return value
       const response = {
-        ...responses.generateAddress, // generateAddress return value always includes xAddress to encourage X-address adoption
+        ...responses.generateAddress,
         xAddress: 'TVG3TcCD58BD6MZqsNuTihdrhZwR8SzvYS8U87zvHsAcNw4'
       }
-      assert.deepEqual(account, response)
+      expect(account).to.equal(response)
     },
 
   'generateAddress with algorithm `ed25519` and given entropy; include classic address; for test network use':
@@ -216,7 +202,7 @@ export default <TestSuite>{
       const account = client.generateAddress(options)
 
       // THEN we get the expected return value
-      assert.deepEqual(account, {
+      expect(account).to.equal({
         // generateAddress return value always includes xAddress to encourage X-address adoption
         xAddress: 'T7t4HeTMF5tT68agwuVbJwu23ssMPeh8dDtGysZoQiij1oo',
 
@@ -236,16 +222,10 @@ export default <TestSuite>{
     // THEN we get an object with xAddress starting with 'T' and a secret starting with 's'
 
     // generateAddress return value always includes xAddress to encourage X-address adoption
-    assert.deepEqual(
-      account.xAddress.slice(0, 1),
-      'T',
-      'Test addresses start with T'
-    )
+    expect(account.xAddress.startsWith('T')).to.equal(true)
 
-    assert.deepEqual(
-      account.secret.slice(0, 1),
-      's',
-      `Secret ${account.secret} must start with 's'`
-    )
+    expect(account.secret.startsWith('s')).to.equal(true)
   }
 }
+
+export default tests

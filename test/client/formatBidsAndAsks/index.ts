@@ -6,11 +6,22 @@ import requests from '../../fixtures/requests'
 import responses from '../../fixtures/responses'
 import type {TestSuite} from '../../utils'
 
-function checkSortingOfOrders(orders) {
+interface Order {
+  specification: {
+    direction: 'buy' | 'sell'
+    totalPrice: {
+      value: string
+    }
+    quantity: {
+      value: string
+    }
+  }
+}
+
+function checkSortingOfOrders(orders: Order[]): boolean {
   let previousRate = '0'
-  for (let i = 0; i < orders.length; i++) {
-    const order = orders[i]
-    let rate
+  for (const order of orders) {
+    let rate: string
 
     // We calculate the quality of output/input here as a test.
     // This won't hold in general because when output and input amounts get tiny,
@@ -18,7 +29,6 @@ function checkSortingOfOrders(orders) {
     // order book where it was originally placed. It would be more consistent
     // to check the quality from the offer book, but for the test data set,
     // this calculation holds.
-
     if (order.specification.direction === 'buy') {
       rate = new BigNumber(order.specification.quantity.value)
         .dividedBy(order.specification.totalPrice.value)
@@ -28,10 +38,10 @@ function checkSortingOfOrders(orders) {
         .dividedBy(order.specification.quantity.value)
         .toString()
     }
-    assert(
-      new BigNumber(rate).isGreaterThanOrEqualTo(previousRate),
-      `Rates must be sorted from least to greatest: ${rate} should be >= ${previousRate}`
+    expect(new BigNumber(rate).isGreaterThanOrEqualTo(previousRate)).to.equal(
+      true
     )
+
     previousRate = rate
   }
   return true
@@ -91,8 +101,8 @@ const tests: TestSuite = {
     }
 
     const directOfferResults = await client.request('book_offers', {
-      taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.base),
-      taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
+      taker_gets: orderbookInfo.base,
+      taker_pays: orderbookInfo.counter,
       ledger_index: 'validated',
       limit: 20,
       taker: address
@@ -133,35 +143,31 @@ const tests: TestSuite = {
       },
       counter: {
         currency: 'JPY',
-        counterparty: 'rB3gZey7VWHYRqJHLoHDEJXJ2pEPNieKiS'
+        issuer: 'rB3gZey7VWHYRqJHLoHDEJXJ2pEPNieKiS'
       }
     }
 
     const myAddress = 'rE9qNjzJXpiUbVomdv7R4xhrXVeH2oVmGR'
 
     const directOfferResults = client.request('book_offers', {
-      taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.base),
-      taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
+      taker_gets: orderbookInfo.base,
+      taker_pays: orderbookInfo.counter,
       ledger_index: 'validated',
-      limit: 400, // must match `test/fixtures/rippled/requests/1-taker_gets-XRP-taker_pays-JPY.json`
+      limit: 400,
       taker: myAddress
     })
 
     const reverseOfferResults = client.request('book_offers', {
-      taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
-      taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.base),
+      taker_gets: orderbookInfo.counter,
+      taker_pays: orderbookInfo.base,
       ledger_index: 'validated',
-      limit: 400, // must match `test/fixtures/rippled/requests/2-taker_gets-JPY-taker_pays-XRP.json`
+      limit: 400,
       taker: myAddress
     })
 
-    const directOffers = directOfferResults
-      ? directOfferResults.offers
-      : [].flat()
+    const directOffers = directOfferResults ? directOfferResults.offers : []
 
-    const reverseOffers = reverseOfferResults
-      ? reverseOfferResults.offers
-      : [].flat()
+    const reverseOffers = reverseOfferResults ? reverseOfferResults.offers : []
 
     const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
       ...directOffers,
@@ -186,37 +192,36 @@ const tests: TestSuite = {
 
     const myAddress = 'rE9qNjzJXpiUbVomdv7R4xhrXVeH2oVmGR'
 
-    await Promise.all([
-      client.request('book_offers', {
-        taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.base),
-        taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
-        ledger_index: 'validated',
-        limit: 400, // must match `test/fixtures/rippled/requests/1-taker_gets-XRP-taker_pays-JPY.json`
-        taker: myAddress
-      }),
-      client.request('book_offers', {
-        taker_gets: Client.renameCounterpartyToIssuer(orderbookInfo.counter),
-        taker_pays: Client.renameCounterpartyToIssuer(orderbookInfo.base),
-        ledger_index: 'validated',
-        limit: 400, // must match `test/fixtures/rippled/requests/2-taker_gets-JPY-taker_pays-XRP.json`
-        taker: myAddress
-      })
-    ]).then(([directOfferResults, reverseOfferResults]) => {
-      const directOffers = directOfferResults
-        ? directOfferResults.offers
-        : [].flat()
-      const reverseOffers = reverseOfferResults
-        ? reverseOfferResults.offers
-        : [].flat()
-      const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
-        ...directOffers,
-        ...reverseOffers
-      ])
-      return (
-        checkSortingOfOrders(orderbook.bids) &&
-        checkSortingOfOrders(orderbook.asks)
-      )
+    const directOfferResults = await client.request('book_offers', {
+      taker_gets: orderbookInfo.base,
+      taker_pays: orderbookInfo.counter,
+      ledger_index: 'validated',
+      limit: 400,
+      taker: myAddress
     })
+
+    const reverseOfferResults = await client.request('book_offers', {
+      taker_gets: orderbookInfo.counter,
+      taker_pays: orderbookInfo.base,
+      ledger_index: 'validated',
+      limit: 400,
+      taker: myAddress
+    })
+
+    const directOffers = directOfferResults
+      ? directOfferResults.offers
+      : [].flat()
+    const reverseOffers = reverseOfferResults
+      ? reverseOfferResults.offers
+      : [].flat()
+    const orderbook = Client.formatBidsAndAsks(orderbookInfo, [
+      ...directOffers,
+      ...reverseOffers
+    ])
+    return (
+      checkSortingOfOrders(orderbook.bids) &&
+      checkSortingOfOrders(orderbook.asks)
+    )
   },
 
   'sorted so that best deals come first': async (client, address) => {

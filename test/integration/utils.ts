@@ -6,7 +6,7 @@ const masterWallet = new Wallet(
   'snoPBrXtMeMyMHUVTgbuqAfg1SUTb'
 )
 
-function ledgerAccept(client: Client): void {
+async function ledgerAccept(client: Client): Promise<void> {
   return client.connection.request({command: 'ledger_accept'})
 }
 
