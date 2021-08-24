@@ -1,14 +1,10 @@
 import assert from 'assert-diff'
 import _ from 'lodash'
 
-import {Client} from 'xrpl-local'
-
 import responses from './fixtures/responses'
 import ledgerClosed from './fixtures/rippled/ledger-close.json'
 import setupClient from './setup-client'
 import {ignoreWebSocketDisconnect} from './utils'
-
-const schemaValidator = Client._PRIVATE.schemaValidator
 
 const TIMEOUT = 20000
 
