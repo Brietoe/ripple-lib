@@ -6,6 +6,7 @@ import { isValidXAddress } from "ripple-address-codec";
 
 import { Client } from "xrpl-local";
 import { errors } from "xrpl-local/common";
+import { FormattedOrderSpecification } from "xrpl-local/common/types/objects";
 import { isValidSecret } from "xrpl-local/utils";
 
 import { JsonObject } from "../../ripple-binary-codec/src/types/serialized-type";
@@ -182,29 +183,35 @@ async function makeTrustLine(
   return trust;
 }
 
-function makeOrder(client, address, specification, secret) {
+// eslint-disable-next-line max-params -- The extra parameter let's us abstract away the promise logic
+async function makeOrder(
+  client: Client,
+  address: string,
+  specification: FormattedOrderSpecification,
+  secret: string
+): Promise<any> {
   return client
     .prepareOrder(address, specification)
     .then((data) => client.sign(data.txJSON, secret))
-    .then((signed) =>
+    .then(async (signed) =>
       client.request({ command: "submit", tx_blob: signed.signedTransaction })
     )
     .then(() => ledgerAccept(client));
 }
 
-function setupAccounts(testcase) {
-  const client = testcase.client;
+function setupAccounts(testcase: Mocha.Context) {
+  const client: Client = testcase.client;
 
   const promise = payTo(client, "rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM")
     .then(() => payTo(client, wallet.getAddress()))
     .then(() => payTo(client, testcase.newWallet.xAddress))
     .then(() => payTo(client, "rKmBGxocj9Abgy25J51Mk1iqFzW9aVF9Tc"))
     .then(() => payTo(client, "rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q"))
-    .then(() => {
+    .then(async () => {
       return client
         .prepareSettings(masterAccount, { defaultRipple: true })
         .then((data) => client.sign(data.txJSON, masterSecret))
-        .then((signed) =>
+        .then(async (signed) =>
           client.request({
             command: "submit",
             tx_blob: signed.signedTransaction,
@@ -224,7 +231,7 @@ function setupAccounts(testcase) {
     )
     .then(() => payTo(client, wallet.getAddress(), "123", "USD", masterAccount))
     .then(() => payTo(client, "rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q"))
-    .then(() => {
+    .then(async () => {
       const orderSpecification = {
         direction: "buy",
         quantity: {
@@ -244,7 +251,7 @@ function setupAccounts(testcase) {
         testcase.newWallet.secret
       );
     })
-    .then(() => {
+    .then(async () => {
       const orderSpecification = {
         direction: "buy",
         quantity: {
@@ -267,8 +274,9 @@ function setupAccounts(testcase) {
   return promise;
 }
 
-function teardown(this: any) {
-  return this.client.disconnect();
+async function tearDown(this: any): Promise<void> {
+  const client: Client = this.client;
+  return client.disconnect();
 }
 
 function suiteSetup(this: any) {
@@ -294,7 +302,7 @@ function suiteSetup(this: any) {
         this.startLedgerVersion = ledgerVersion;
       })
       .then(() => setupAccounts(this))
-      .then(() => teardown.bind(this)())
+      .then(async () => tearDown.bind(this)())
   );
 }
 
@@ -305,7 +313,7 @@ describe("integration tests", function () {
 
   before(suiteSetup);
   beforeEach(_.partial(setup, serverUrl));
-  afterEach(teardown);
+  afterEach(tearDown);
 
   it("trustline", function () {
     return this.client
@@ -556,7 +564,7 @@ describe("integration tests - standalone rippled", function () {
   this.timeout(TIMEOUT);
 
   beforeEach(_.partial(setup, serverUrl));
-  afterEach(teardown);
+  afterEach(tearDown);
   const address = "r5nx8ZkwEbFztnc8Qyi22DE9JYjRzNmvs";
   const secret = "ss6F8381Br6wwpy9p582H8sBt19J3";
   const signer1address = "rQDhz2ZNXmhxzCYwxU6qAbdxsHA4HV45Y2";
