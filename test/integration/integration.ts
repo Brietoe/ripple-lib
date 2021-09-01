@@ -9,6 +9,7 @@ import { errors } from "xrpl-local/common";
 import { isValidSecret } from "xrpl-local/utils";
 
 import { JsonObject } from "../../ripple-binary-codec/src/types/serialized-type";
+import TransactionMetadata from "../../src/models/transactions/metadata";
 import { generateXAddress } from "../../src/utils/generateAddress";
 import requests from "../fixtures/requests";
 
@@ -39,9 +40,10 @@ async function verifyTransaction(
   options: { minLedgerVersion: any; maxLedgerVersion?: any },
   txData: JsonObject,
   account: string
-) {
+): Promise<any> {
   console.log("VERIFY...");
-  return testcase.client
+  const client: Client = testcase.client;
+  return client
     .request({
       command: "tx",
       transaction: hash,
@@ -49,10 +51,16 @@ async function verifyTransaction(
       max_ledger: options.maxLedgerVersion,
     })
     .then((data) => {
-      assert(data && data.result);
+      assert(data);
+      assert(data.result);
       assert.strictEqual(data.result.TransactionType, type);
       assert.strictEqual(data.result.Account, account);
-      assert.strictEqual(data.result.meta.TransactionResult, "tesSUCCESS");
+      const metaResult: string | TransactionMetadata = data.result.meta;
+      if (typeof metaResult === "object") {
+        assert.strictEqual(metaResult.TransactionResult, "tesSUCCESS");
+      } else {
+        assert.strictEqual(metaResult, "tesSUCCESS");
+      }
       if (testcase.transactions != null) {
         testcase.transactions.push(hash);
       }
@@ -81,27 +89,29 @@ async function verifyTransaction(
     });
 }
 
-function testTransaction(
-  testcase,
-  type,
-  lastClosedLedgerVersion,
-  prepared,
+async function testTransaction(
+  testcase: Mocha.Context,
+  type: string,
+  lastClosedLedgerVersion: number,
+  prepared: { txJSON: string },
   address = wallet.getAddress(),
   secret = wallet.getSecret()
-) {
+): Promise<any> {
   const txJSON = prepared.txJSON;
   assert(txJSON, "missing txJSON");
   const txData = JSON.parse(txJSON);
   assert.strictEqual(txData.Account, address);
-  const signedData = testcase.client.sign(txJSON, secret);
+  const client: Client = testcase.client;
+  const signedData = client.sign(txJSON, secret);
   console.log("PREPARED...");
-  return testcase.client
+  return client
     .request({ command: "submit", tx_blob: signedData.signedTransaction })
-    .then((response) =>
-      testcase.test.title.indexOf("multisign") !== -1
-        ? acceptLedger(testcase.client).then(() => response)
-        : response
-    )
+    .then((response) => {
+      assert(testcase.test, "Missing testcase.test");
+      return testcase.test.title.includes("multisign")
+        ? acceptLedger(client).then(() => response)
+        : response;
+    })
     .then(async (response) => {
       console.log("SUBMITTED...");
       assert.strictEqual(response.result.engine_result, "tesSUCCESS");
@@ -307,7 +317,7 @@ describe("integration tests", function () {
             requests.prepareTrustline.simple,
             instructions
           )
-          .then((prepared) =>
+          .then(async (prepared) =>
             testTransaction(this, "TrustSet", ledgerVersion, prepared)
           );
       });
@@ -334,7 +344,7 @@ describe("integration tests", function () {
       .then((ledgerVersion) => {
         return this.client
           .preparePayment(address, paymentSpecification, instructions)
-          .then((prepared) =>
+          .then(async (prepared) =>
             testTransaction(this, "Payment", ledgerVersion, prepared)
           );
       });
@@ -372,7 +382,7 @@ describe("integration tests", function () {
       .then((ledgerVersion) => {
         return this.client
           .prepareOrder(address, orderSpecification, instructions)
-          .then((prepared) =>
+          .then(async (prepared) =>
             testTransaction(this, "OfferCreate", ledgerVersion, prepared)
           )
           .then((result) => {
@@ -401,7 +411,7 @@ describe("integration tests", function () {
                 { orderSequence: txData.Sequence },
                 instructions
               )
-              .then((prepared) =>
+              .then(async (prepared) =>
                 testTransaction(this, "OfferCancel", ledgerVersion, prepared)
               )
           );
@@ -571,7 +581,7 @@ describe("integration tests - standalone rippled", function () {
             minLedgerVersion = ledgerVersion;
             return this.client
               .prepareSettings(address, { signers }, instructions)
-              .then((prepared) => {
+              .then(async (prepared) => {
                 return testTransaction(
                   this,
                   "SignerListSet",
