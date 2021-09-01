@@ -137,7 +137,7 @@ async function testTransaction(
     });
 }
 
-function setup(this: any, server = serverUrl) {
+function setup(this: any, server = serverUrl): void {
   this.client = new Client(server);
   console.log("CONNECTING...");
   return this.client.connect().then(
@@ -154,8 +154,12 @@ function setup(this: any, server = serverUrl) {
 const masterAccount = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh";
 const masterSecret = "snoPBrXtMeMyMHUVTgbuqAfg1SUTb";
 
-function makeTrustLine(testcase, address, secret) {
-  const client = testcase.client;
+async function makeTrustLine(
+  testcase: Mocha.Context,
+  address: string,
+  secret: string
+): Promise<any> {
+  const client: Client = testcase.client;
   const specification = {
     currency: "USD",
     counterparty: masterAccount,
@@ -164,7 +168,7 @@ function makeTrustLine(testcase, address, secret) {
   };
   const trust = client
     .prepareTrustline(address, specification, {})
-    .then((data) => {
+    .then(async (data) => {
       const signed = client.sign(data.txJSON, secret);
       if (address === wallet.getAddress()) {
         testcase.transactions.push(signed.id);
@@ -208,10 +212,10 @@ function setupAccounts(testcase) {
         )
         .then(() => ledgerAccept(client));
     })
-    .then(() =>
+    .then(async () =>
       makeTrustLine(testcase, wallet.getAddress(), wallet.getSecret())
     )
-    .then(() =>
+    .then(async () =>
       makeTrustLine(
         testcase,
         testcase.newWallet.xAddress,
