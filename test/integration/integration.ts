@@ -1,3 +1,4 @@
+/* eslint-disable no-console -- The console logs help debug failing tests */
 import assert from "assert";
 
 import _ from "lodash";
@@ -7,6 +8,7 @@ import { Client } from "xrpl-local";
 import { errors } from "xrpl-local/common";
 import { isValidSecret } from "xrpl-local/utils";
 
+import { JsonObject } from "../../ripple-binary-codec/src/types/serialized-type";
 import { generateXAddress } from "../../src/utils/generateAddress";
 import requests from "../fixtures/requests";
 
@@ -15,19 +17,29 @@ import wallet from "./wallet";
 
 // how long before each test case times out
 const TIMEOUT = 20000;
-const INTERVAL = 1000; // how long to wait between checks for validated ledger
+// how long to wait between checks for validated ledger
+const INTERVAL = 1000;
 
+// eslint-disable-next-line node/no-process-env -- This allows the user to pass in a custom ip
 const HOST = process.env.HOST ?? "0.0.0.0";
+// eslint-disable-next-line node/no-process-env -- This allows the user to pass in a port
 const PORT = process.env.PORT ?? "6006";
 const serverUrl = `ws://${HOST}:${PORT}`;
 
 console.log(serverUrl);
 
-function acceptLedger(client) {
+async function acceptLedger(client: Client): Promise<any> {
   return client.connection.request({ command: "ledger_accept" });
 }
 
-function verifyTransaction(testcase, hash, type, options, txData, account) {
+async function verifyTransaction(
+  testcase: Mocha.Context,
+  hash: string,
+  type: string,
+  options: { minLedgerVersion: any; maxLedgerVersion?: any },
+  txData: JsonObject,
+  account: string
+) {
   console.log("VERIFY...");
   return testcase.client
     .request({
@@ -46,12 +58,12 @@ function verifyTransaction(testcase, hash, type, options, txData, account) {
       }
       return { txJSON: JSON.stringify(txData), id: hash, tx: data };
     })
-    .catch((error) => {
+    .catch(async (error) => {
       if (error instanceof errors.PendingLedgerVersionError) {
         console.log("NOT VALIDATED YET...");
         return new Promise((resolve, reject) => {
           setTimeout(
-            () =>
+            async () =>
               verifyTransaction(
                 testcase,
                 hash,
@@ -90,7 +102,7 @@ function testTransaction(
         ? acceptLedger(testcase.client).then(() => response)
         : response
     )
-    .then((response) => {
+    .then(async (response) => {
       console.log("SUBMITTED...");
       assert.strictEqual(response.result.engine_result, "tesSUCCESS");
       const options = {
@@ -100,7 +112,7 @@ function testTransaction(
       ledgerAccept(testcase.client);
       return new Promise((resolve, reject) => {
         setTimeout(
-          () =>
+          async () =>
             verifyTransaction(
               testcase,
               signedData.id,
@@ -595,10 +607,10 @@ describe("integration tests - standalone rippled", function () {
                 command: "submit",
                 tx_blob: combined.signedTransaction,
               })
-              .then((response) =>
+              .then(async (response) =>
                 acceptLedger(this.client).then(() => response)
               )
-              .then((response) => {
+              .then(async (response) => {
                 assert.strictEqual(response.result.engine_result, "tesSUCCESS");
                 const options = { minLedgerVersion };
                 return verifyTransaction(
