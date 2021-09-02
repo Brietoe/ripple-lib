@@ -9,8 +9,14 @@ import { FormattedOrderSpecification } from "xrpl-local/common/types/objects";
 import { isValidSecret } from "xrpl-local/utils";
 
 import { JsonObject } from "../../ripple-binary-codec/dist/types/serialized-type";
-import { LedgerResponse, Prepare, SubmitResponse, TxResponse } from "../../src";
-import { Client } from "../../src/client";
+import {
+  Client,
+  LedgerResponse,
+  Prepare,
+  SubmitResponse,
+  TxResponse,
+} from "../../src";
+import { Transaction } from "../../src/models/transactions";
 import { generateXAddress } from "../../src/utils/generateAddress";
 import requests from "../fixtures/requests";
 
@@ -38,7 +44,7 @@ async function verifyTransaction(
   testcase: Mocha.Context,
   hash: string,
   type: string,
-  options: { minLedgerVersion: number | null; maxLedgerVersion: number | null },
+  options: { minLedgerVersion: number; maxLedgerVersion?: number },
   txData: JsonObject,
   account: string
 ): Promise<void> {
@@ -91,14 +97,14 @@ async function verifyTransaction(
 async function testTransaction(
   testcase: Mocha.Context,
   type: string,
-  lastClosedLedgerVersion: number | null,
+  lastClosedLedgerVersion: number,
   prepared: Prepare,
   address = walletAddress,
   secret = walletSecret
 ) {
   const txJSON = prepared.txJSON;
   assert(txJSON, "missing txJSON");
-  const txData = JSON.parse(txJSON);
+  const txData: Transaction = JSON.parse(txJSON);
   assert.strictEqual(txData.Account, address);
   const client: Client = testcase.client;
   const signedData = client.sign(txJSON, secret);
@@ -128,7 +134,8 @@ async function testTransaction(
         signedData.id,
         type,
         options,
-        txData,
+        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Transactions look the same as JsonObjects
+        txData as unknown as JsonObject,
         address
       ).then(resolve, reject);
     }, INTERVAL);
@@ -651,7 +658,7 @@ describe("integration tests - standalone rippled", function () {
         { address: signer2address, weight: 1 },
       ],
     };
-    let minLedgerVersion: number | null = null;
+    let minLedgerVersion: number;
     return payTo(this.client, address)
       .then(() => {
         return this.client
@@ -663,7 +670,7 @@ describe("integration tests - standalone rippled", function () {
             (response: { result: { ledger_index: any } }) =>
               response.result.ledger_index
           )
-          .then((ledgerVersion: number | null) => {
+          .then((ledgerVersion: number) => {
             minLedgerVersion = ledgerVersion;
             return this.client
               .prepareSettings(address, { signers }, instructions)
