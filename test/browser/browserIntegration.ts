@@ -8,12 +8,11 @@ describe("Browser Tests", function () {
     const browser = await puppeteer.launch({ headless: true });
     try {
       const page = await browser.newPage().catch();
-      const fileLocation = "file:///".concat(
-        path.join(__dirname, "../localIntegrationRunner.html")
+      const fileLocation = path.join(
+        "file:///",
+        __dirname,
+        "../localIntegrationRunner.html"
       );
-      console.log(fileLocation);
-      console.log(`file:///${__dirname}/../localIntegrationRunner.html`);
-      // `file:///${__dirname}/../localIntegrationRunner.html`
       await page.goto(fileLocation);
 
       await page.waitForFunction(
@@ -34,6 +33,7 @@ describe("Browser Tests", function () {
       expect(fails).to.equal("failures: 0");
       expect(passes).to.not.equal("passes: 0");
     } catch (err) {
+      // eslint-disable-next-line no-console -- This log helps with debugging the browser tests
       console.log(err);
       assert(false);
     } finally {
