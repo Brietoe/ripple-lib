@@ -9,7 +9,7 @@ import { FormattedOrderSpecification } from "xrpl-local/common/types/objects";
 import { isValidSecret } from "xrpl-local/utils";
 
 import { JsonObject } from "../../ripple-binary-codec/dist/types/serialized-type";
-import { Prepare, TxResponse } from "../../src";
+import { LedgerResponse, Prepare, TxResponse } from "../../src";
 import { Client } from "../../src/client";
 import { generateXAddress } from "../../src/utils/generateAddress";
 import requests from "../fixtures/requests";
@@ -271,39 +271,56 @@ async function setupAccounts(testcase: Mocha.Context) {
   return promise;
 }
 
-function teardown(this: any) {
-  return this.client.disconnect();
+async function teardownClient(this: any): Promise<void> {
+  const client: Client = this.client;
+  return client.disconnect();
 }
 
-async function suiteSetup(this: any) {
+async function suiteSetup(this: any): Promise<void> {
   this.transactions = [];
 
-  return (
-    setupClient // TODO: Figure out if this should be setup (Implicitly defined somewhere), or setupClient (Local definition)
-      .bind(this)(serverUrl)
-      .then(async () => ledgerAccept(this.client))
-      .then(async () => (this.newWallet = generateXAddress()))
-      // two times to give time to server to send `ledgerClosed` event
-      // so getLedgerVersion will return right value
-      .then(async () => ledgerAccept(this.client))
-      .then(() =>
-        this.client
-          .request({
-            command: "ledger",
-            ledger_index: "validated",
-          })
-          .then(
-            (response: { result: { ledger_index: any } }) =>
-              response.result.ledger_index
-          )
-      )
-      .then((ledgerVersion) => {
-        this.startLedgerVersion = ledgerVersion;
-      })
-      .then(async () => setupAccounts(this))
-      .then(() => teardown.bind(this)())
-  );
+  // TODO: Figure out if this should be setup (Implicitly defined somewhere), or setupClient (Local definition)
+  await setupClient.bind(this)(serverUrl);
+  const client: Client = this.client;
+  await ledgerAccept(client);
+  this.newWallet = generateXAddress();
+  // two times to give time to server to send `ledgerClosed` event
+  // so getLedgerVersion will return right value
+  await ledgerAccept(client);
+  const response: LedgerResponse = await client.request({
+    command: "ledger",
+    ledger_index: "validated",
+  });
+  this.startLedgerVersion = response.result.ledger_index;
+  await setupAccounts(this);
+  return teardownClient.bind(this)();
 }
+// return (
+//   setupClient
+//     .bind(this)(serverUrl)
+//     .then(async () => ledgerAccept(this.client))
+//     .then(async () => (this.newWallet = generateXAddress()))
+//     // two times to give time to server to send `ledgerClosed` event
+//     // so getLedgerVersion will return right value
+//     .then(async () => ledgerAccept(this.client))
+//     .then(() =>
+//       this.client
+//         .request({
+//           command: "ledger",
+//           ledger_index: "validated",
+//         })
+//         .then(
+//           (response: { result: { ledger_index: any } }) =>
+//             response.result.ledger_index
+//         )
+//     )
+//     .then((ledgerVersion) => {
+//       this.startLedgerVersion = ledgerVersion;
+//     })
+//     .then(async () => setupAccounts(this))
+//     .then(async () => teardownClient.bind(this)())
+// );
+// }
 
 describe("integration tests", function () {
   const address = walletAddress;
@@ -312,7 +329,7 @@ describe("integration tests", function () {
 
   before(suiteSetup);
   beforeEach(_.partial(setupClient, serverUrl));
-  afterEach(teardown);
+  afterEach(teardownClient);
 
   it("trustline", async function () {
     const client: Client = this.client;
@@ -586,7 +603,7 @@ describe("integration tests - standalone rippled", function () {
   this.timeout(TIMEOUT);
 
   beforeEach(_.partial(setupClient, serverUrl));
-  afterEach(teardown);
+  afterEach(teardownClient);
   const address = "r5nx8ZkwEbFztnc8Qyi22DE9JYjRzNmvs";
   const secret = "ss6F8381Br6wwpy9p582H8sBt19J3";
   const signer1address = "rQDhz2ZNXmhxzCYwxU6qAbdxsHA4HV45Y2";
