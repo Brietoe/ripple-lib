@@ -183,7 +183,7 @@ class Client extends EventEmitter {
 
   constructor(server: string, options: ClientOptions = {}) {
     super();
-    if (typeof server !== "string" || !server.match("^(wss?|wss?\\+unix)://")) {
+    if (typeof server !== "string" || !/^(wss?|wss?\+unix):\/\//.exec(server)) {
       throw new ValidationError(
         "server URI must start with `wss://`, `ws://`, `wss+unix://`, or `ws+unix://`."
       );
@@ -252,7 +252,9 @@ class Client extends EventEmitter {
   ): Promise<SubmitMultisignedResponse>;
   public request(r: TransactionEntryRequest): Promise<TransactionEntryResponse>;
   public request(r: TxRequest): Promise<TxResponse>;
-  public request<R extends Request, T extends Response>(r: R): Promise<T> {
+  public async request<R extends Request, T extends Response>(
+    r: R
+  ): Promise<T> {
     // TODO: should this be typed with `extends BaseRequest/BaseResponse`?
     return this.connection.request({
       ...r,
