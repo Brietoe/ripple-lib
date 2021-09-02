@@ -4,12 +4,13 @@ import assert from "assert";
 import _ from "lodash";
 import { isValidXAddress } from "ripple-address-codec";
 
-import { Client, Prepare } from "xrpl-local";
 import { errors } from "xrpl-local/common";
 import { FormattedOrderSpecification } from "xrpl-local/common/types/objects";
 import { isValidSecret } from "xrpl-local/utils";
 
 import { JsonObject } from "../../ripple-binary-codec/dist/types/serialized-type";
+import { Prepare, TxResponse } from "../../src";
+import { Client } from "../../src/client";
 import { generateXAddress } from "../../src/utils/generateAddress";
 import requests from "../fixtures/requests";
 
@@ -37,64 +38,60 @@ async function verifyTransaction(
   testcase: Mocha.Context,
   hash: string,
   type: string,
-  options: { minLedgerVersion: any; maxLedgerVersion?: any },
+  options: { minLedgerVersion?: number; maxLedgerVersion?: number },
   txData: JsonObject,
   account: string
-) {
+): Promise<void> {
   console.log("VERIFY...");
   const client: Client = testcase.client;
-  return (
-    client
-      .request({
-        command: "tx",
-        transaction: hash,
-        min_ledger: options.minLedgerVersion,
-        max_ledger: options.maxLedgerVersion,
-      })
-      .then((data) => {
-        assert(data.result);
-        assert.strictEqual(data.result.TransactionType, type);
-        assert.strictEqual(data.result.Account, account);
-        if (typeof data.result.meta === "object") {
-          assert.strictEqual(data.result.meta.TransactionResult, "tesSUCCESS");
-        } else {
-          assert.strictEqual(data.result.meta, "tesSUCCESS");
-        }
-        if (testcase.transactions != null) {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Is better than setting type by extracting to variable
-          testcase.transactions.push(hash);
-        }
-        return { txJSON: JSON.stringify(txData), id: hash, tx: data };
-      })
-      // eslint-disable-next-line consistent-return -- The assert false guarantees we won't return undefined
-      .catch(async (error: Error) => {
-        if (error instanceof errors.PendingLedgerVersionError) {
-          console.log("NOT VALIDATED YET...");
-          return new Promise((resolve, reject) => {
-            setTimeout(
-              async () =>
-                verifyTransaction(
-                  testcase,
-                  hash,
-                  type,
-                  options,
-                  txData,
-                  account
-                ).then(resolve, reject),
-              INTERVAL
-            );
-          });
-        }
-        console.log(error.stack);
-        assert(false, `Transaction not successful: ${error.message}`);
-      })
-  );
+  let data: TxResponse;
+  try {
+    data = await client.request({
+      command: "tx",
+      transaction: hash,
+      min_ledger: options.minLedgerVersion,
+      max_ledger: options.maxLedgerVersion,
+    });
+
+    assert(data.result);
+    assert.strictEqual(data.result.TransactionType, type);
+    assert.strictEqual(data.result.Account, account);
+    if (typeof data.result.meta === "object") {
+      assert.strictEqual(data.result.meta.TransactionResult, "tesSUCCESS");
+    } else {
+      assert.strictEqual(data.result.meta, "tesSUCCESS");
+    }
+    if (testcase.transactions != null) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Is better than setting type by extracting to variable
+      testcase.transactions.push(hash);
+    }
+  } catch (error) {
+    if (error instanceof errors.PendingLedgerVersionError) {
+      console.log("NOT VALIDATED YET...");
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          verifyTransaction(
+            testcase,
+            hash,
+            type,
+            options,
+            txData,
+            account
+          ).then(resolve, reject);
+        }, INTERVAL);
+      });
+    } else {
+      console.log(error.stack);
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions -- All errors have messages
+      assert(false, `Transaction not successful: ${error.message}`);
+    }
+  }
 }
 
 async function testTransaction(
   testcase: Mocha.Context,
   type: string,
-  lastClosedLedgerVersion: number,
+  lastClosedLedgerVersion: number | null,
   prepared: Prepare,
   address = walletAddress,
   secret = walletSecret
@@ -605,7 +602,7 @@ describe("integration tests - standalone rippled", function () {
         { address: signer2address, weight: 1 },
       ],
     };
-    let minLedgerVersion = null;
+    let minLedgerVersion: number | null = null;
     return payTo(this.client, address)
       .then(() => {
         return this.client

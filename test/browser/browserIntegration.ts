@@ -1,3 +1,5 @@
+import * as path from "path";
+
 import { expect, assert } from "chai";
 import puppeteer from "puppeteer";
 
@@ -6,7 +8,13 @@ describe("Browser Tests", function () {
     const browser = await puppeteer.launch({ headless: true });
     try {
       const page = await browser.newPage().catch();
-      await page.goto(`file:///${__dirname}/../localIntegrationRunner.html`);
+      const fileLocation = "file:///".concat(
+        path.join(__dirname, "../localIntegrationRunner.html")
+      );
+      console.log(fileLocation);
+      console.log(`file:///${__dirname}/../localIntegrationRunner.html`);
+      // `file:///${__dirname}/../localIntegrationRunner.html`
+      await page.goto(fileLocation);
 
       await page.waitForFunction(
         'document.querySelector("body").innerText.includes("submit multisigned transaction")'
