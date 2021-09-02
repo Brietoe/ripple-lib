@@ -9,7 +9,7 @@ import { FormattedOrderSpecification } from "xrpl-local/common/types/objects";
 import { isValidSecret } from "xrpl-local/utils";
 
 import { JsonObject } from "../../ripple-binary-codec/dist/types/serialized-type";
-import { LedgerResponse, Prepare, TxResponse } from "../../src";
+import { LedgerResponse, Prepare, SubmitResponse, TxResponse } from "../../src";
 import { Client } from "../../src/client";
 import { generateXAddress } from "../../src/utils/generateAddress";
 import requests from "../fixtures/requests";
@@ -38,7 +38,7 @@ async function verifyTransaction(
   testcase: Mocha.Context,
   hash: string,
   type: string,
-  options: { minLedgerVersion?: number; maxLedgerVersion?: number },
+  options: { minLedgerVersion: number | null; maxLedgerVersion: number | null },
   txData: JsonObject,
   account: string
 ): Promise<void> {
@@ -103,37 +103,69 @@ async function testTransaction(
   const client: Client = testcase.client;
   const signedData = client.sign(txJSON, secret);
   console.log("PREPARED...");
-  return client
-    .request({ command: "submit", tx_blob: signedData.signedTransaction })
-    .then(async (response) => {
-      return testcase.test?.title.includes("multisign")
-        ? acceptLedger(client).then(() => response)
-        : response;
-    })
-    .then(async (response) => {
-      console.log("SUBMITTED...");
-      assert.strictEqual(response.result.engine_result, "tesSUCCESS");
-      const options = {
-        minLedgerVersion: lastClosedLedgerVersion,
-        maxLedgerVersion: txData.LastLedgerSequence,
-      };
-      ledgerAccept(testcase.client);
-      return new Promise((resolve, reject) => {
-        setTimeout(
-          async () =>
-            verifyTransaction(
-              testcase,
-              signedData.id,
-              type,
-              options,
-              txData,
-              address
-            ).then(resolve, reject),
-          INTERVAL
-        );
-      });
-    });
+
+  const attemptedResponse: SubmitResponse = await client.request({
+    command: "submit",
+    tx_blob: signedData.signedTransaction,
+  });
+  const submittedResponse: SubmitResponse = testcase.test?.title.includes(
+    "multisign"
+  )
+    ? await acceptLedger(client).then(() => attemptedResponse)
+    : attemptedResponse;
+
+  console.log("SUBMITTED...");
+  assert.strictEqual(submittedResponse.result.engine_result, "tesSUCCESS");
+  const options = {
+    minLedgerVersion: lastClosedLedgerVersion,
+    maxLedgerVersion: txData.LastLedgerSequence,
+  };
+  ledgerAccept(testcase.client);
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      verifyTransaction(
+        testcase,
+        signedData.id,
+        type,
+        options,
+        txData,
+        address
+      ).then(resolve, reject);
+    }, INTERVAL);
+  });
 }
+
+// return client
+// .request({ command: "submit", tx_blob: signedData.signedTransaction })
+// .then(async (response) => {
+//       return testcase.test?.title.includes("multisign")
+//         ? acceptLedger(client).then(() => response)
+//         : response;
+// })
+// .then(async (response) => {
+//       console.log("SUBMITTED...");
+//       assert.strictEqual(response.result.engine_result, "tesSUCCESS");
+//       const options = {
+//         minLedgerVersion: lastClosedLedgerVersion,
+//         maxLedgerVersion: txData.LastLedgerSequence,
+//       };
+//       ledgerAccept(testcase.client);
+//       return new Promise((resolve, reject) => {
+//         setTimeout(
+//           async () =>
+//             verifyTransaction(
+//               testcase,
+//               signedData.id,
+//               type,
+//               options,
+//               txData,
+//               address
+//             ).then(resolve, reject),
+//           INTERVAL
+//         );
+//       });
+// });
+// }
 
 async function setupClient(this: any, server = serverUrl) {
   this.client = new Client(server);
