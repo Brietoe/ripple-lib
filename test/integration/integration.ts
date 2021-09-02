@@ -6,6 +6,7 @@ import { isValidXAddress } from "ripple-address-codec";
 
 import { Client, Prepare } from "xrpl-local";
 import { errors } from "xrpl-local/common";
+import { FormattedOrderSpecification } from "xrpl-local/common/types/objects";
 import { isValidSecret } from "xrpl-local/utils";
 
 import { JsonObject } from "../../ripple-binary-codec/dist/types/serialized-type";
@@ -108,7 +109,7 @@ async function testTransaction(
   return client
     .request({ command: "submit", tx_blob: signedData.signedTransaction })
     .then(async (response) => {
-      return testcase.test.title.includes("multisign")
+      return testcase.test?.title.includes("multisign")
         ? acceptLedger(client).then(() => response)
         : response;
     })
@@ -137,10 +138,11 @@ async function testTransaction(
     });
 }
 
-function setup(this: any, server = serverUrl) {
+async function setupClient(this: any, server = serverUrl) {
   this.client = new Client(server);
   console.log("CONNECTING...");
-  return this.client.connect().then(
+  const client: Client = this.client;
+  return client.connect().then(
     () => {
       console.log("CONNECTED...");
     },
@@ -154,8 +156,12 @@ function setup(this: any, server = serverUrl) {
 const masterAccount = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh";
 const masterSecret = "snoPBrXtMeMyMHUVTgbuqAfg1SUTb";
 
-function makeTrustLine(testcase, address, secret) {
-  const client = testcase.client;
+async function makeTrustLine(
+  testcase: Mocha.Context,
+  address: string,
+  secret: string
+): Promise<any> {
+  const client: Client = testcase.client;
   const specification = {
     currency: "USD",
     counterparty: masterAccount,
@@ -164,9 +170,10 @@ function makeTrustLine(testcase, address, secret) {
   };
   const trust = client
     .prepareTrustline(address, specification, {})
-    .then((data) => {
+    .then(async (data) => {
       const signed = client.sign(data.txJSON, secret);
       if (address === wallet.getAddress()) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Cleaner to read without additional typing
         testcase.transactions.push(signed.id);
       }
       return client.request({
@@ -174,33 +181,39 @@ function makeTrustLine(testcase, address, secret) {
         tx_blob: signed.signedTransaction,
       });
     })
-    .then(() => ledgerAccept(client));
+    .then(async () => ledgerAccept(client));
   return trust;
 }
 
-function makeOrder(client, address, specification, secret) {
+async function makeOrder(
+  client: Client,
+  address: string,
+  specification: FormattedOrderSpecification,
+  secret: string
+): Promise<any> {
   return client
     .prepareOrder(address, specification)
     .then((data) => client.sign(data.txJSON, secret))
-    .then((signed) =>
+    .then(async (signed) =>
       client.request({ command: "submit", tx_blob: signed.signedTransaction })
     )
-    .then(() => ledgerAccept(client));
+    .then(async () => ledgerAccept(client));
 }
 
-function setupAccounts(testcase) {
-  const client = testcase.client;
+function setupAccounts(testcase: Mocha.Context) {
+  const client: Client = testcase.client;
 
+  // TODO: payTo has Promise<SubmitResponse> type
   const promise = payTo(client, "rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM")
     .then(() => payTo(client, wallet.getAddress()))
     .then(() => payTo(client, testcase.newWallet.xAddress))
     .then(() => payTo(client, "rKmBGxocj9Abgy25J51Mk1iqFzW9aVF9Tc"))
     .then(() => payTo(client, "rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q"))
-    .then(() => {
+    .then(async () => {
       return client
         .prepareSettings(masterAccount, { defaultRipple: true })
-        .then((data) => client.sign(data.txJSON, masterSecret))
-        .then((signed) =>
+        .then((data: { txJSON: any }) => client.sign(data.txJSON, masterSecret))
+        .then(async (signed: { signedTransaction: any }) =>
           client.request({
             command: "submit",
             tx_blob: signed.signedTransaction,
@@ -208,10 +221,10 @@ function setupAccounts(testcase) {
         )
         .then(() => ledgerAccept(client));
     })
-    .then(() =>
+    .then(async () =>
       makeTrustLine(testcase, wallet.getAddress(), wallet.getSecret())
     )
-    .then(() =>
+    .then(async () =>
       makeTrustLine(
         testcase,
         testcase.newWallet.xAddress,
@@ -220,7 +233,7 @@ function setupAccounts(testcase) {
     )
     .then(() => payTo(client, wallet.getAddress(), "123", "USD", masterAccount))
     .then(() => payTo(client, "rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q"))
-    .then(() => {
+    .then(async () => {
       const orderSpecification = {
         direction: "buy",
         quantity: {
@@ -234,13 +247,13 @@ function setupAccounts(testcase) {
         },
       };
       return makeOrder(
-        testcase.client,
+        client,
         testcase.newWallet.xAddress,
         orderSpecification,
         testcase.newWallet.secret
       );
     })
-    .then(() => {
+    .then(async () => {
       const orderSpecification = {
         direction: "buy",
         quantity: {
@@ -267,14 +280,14 @@ function teardown(this: any) {
   return this.client.disconnect();
 }
 
-function suiteSetup(this: any) {
+async function suiteSetup(this: any) {
   this.transactions = [];
 
   return (
-    setup
+    setupClient // TODO: Figure out if this should be setup (Implicitly defined somewhere), or setupClient (Local definition)
       .bind(this)(serverUrl)
-      .then(() => ledgerAccept(this.client))
-      .then(() => (this.newWallet = generateXAddress()))
+      .then(async () => ledgerAccept(this.client))
+      .then(async () => (this.newWallet = generateXAddress()))
       // two times to give time to server to send `ledgerClosed` event
       // so getLedgerVersion will return right value
       .then(() => ledgerAccept(this.client))
@@ -284,7 +297,10 @@ function suiteSetup(this: any) {
             command: "ledger",
             ledger_index: "validated",
           })
-          .then((response) => response.result.ledger_index)
+          .then(
+            (response: { result: { ledger_index: any } }) =>
+              response.result.ledger_index
+          )
       )
       .then((ledgerVersion) => {
         this.startLedgerVersion = ledgerVersion;
@@ -300,7 +316,7 @@ describe("integration tests", function () {
   this.timeout(TIMEOUT);
 
   before(suiteSetup);
-  beforeEach(_.partial(setup, serverUrl));
+  beforeEach(_.partial(setupClient, serverUrl));
   afterEach(teardown);
 
   it("trustline", async function () {
@@ -345,11 +361,14 @@ describe("integration tests", function () {
         command: "ledger",
         ledger_index: "validated",
       })
-      .then((response) => response.result.ledger_index)
-      .then((ledgerVersion) => {
+      .then(
+        (response: { result: { ledger_index: any } }) =>
+          response.result.ledger_index
+      )
+      .then((ledgerVersion: number) => {
         return this.client
           .preparePayment(address, paymentSpecification, instructions)
-          .then(async (prepared) =>
+          .then(async (prepared: Prepare) =>
             testTransaction(this, "Payment", ledgerVersion, prepared)
           );
       });
@@ -383,24 +402,30 @@ describe("integration tests", function () {
         command: "ledger",
         ledger_index: "validated",
       })
-      .then((response) => response.result.ledger_index)
-      .then((ledgerVersion) => {
+      .then(
+        (response: { result: { ledger_index: any } }) =>
+          response.result.ledger_index
+      )
+      .then((ledgerVersion: number) => {
         return this.client
           .prepareOrder(address, orderSpecification, instructions)
-          .then(async (prepared) =>
+          .then(async (prepared: Prepare) =>
             testTransaction(this, "OfferCreate", ledgerVersion, prepared)
           )
-          .then((result) => {
+          .then((result: { txJSON: string }) => {
             const txData = JSON.parse(result.txJSON);
             return this.client
               .request({
                 command: "account_offers",
                 account: address,
               })
-              .then((response) => response.result.offers)
-              .then((orders) => {
+              .then(
+                (response: { result: { offers: any } }) =>
+                  response.result.offers
+              )
+              .then((orders: any[]) => {
                 assert(orders && orders.length > 0);
-                const createdOrder = orders.filter((order) => {
+                const createdOrder = orders.filter((order: { seq: any }) => {
                   return order.seq === txData.Sequence;
                 })[0];
                 assert(createdOrder);
@@ -409,14 +434,14 @@ describe("integration tests", function () {
                 return txData;
               });
           })
-          .then((txData) =>
+          .then((txData: { Sequence: any }) =>
             this.client
               .prepareOrderCancellation(
                 address,
                 { orderSequence: txData.Sequence },
                 instructions
               )
-              .then(async (prepared) =>
+              .then(async (prepared: Prepare) =>
                 testTransaction(this, "OfferCancel", ledgerVersion, prepared)
               )
           );
@@ -424,35 +449,41 @@ describe("integration tests", function () {
   });
 
   it("isConnected", function () {
-    assert(this.client.isConnected());
+    const client: Client = this.client;
+    assert(client.isConnected());
   });
 
-  it("getFee", function () {
-    return this.client.getFee().then((fee) => {
+  it("getFee", async function () {
+    const client: Client = this.client;
+    return client.getFee().then((fee: string) => {
       assert.strictEqual(typeof fee, "string");
       assert(!isNaN(Number(fee)));
       assert(parseFloat(fee) === Number(fee));
     });
   });
 
-  it("getTrustlines", function () {
+  it("getTrustlines", async function () {
     const fixture = requests.prepareTrustline.simple;
     const { currency, counterparty } = fixture;
     const options = { currency, counterparty };
-    return this.client.getTrustlines(address, options).then((data) => {
-      assert(data && data.length > 0 && data[0] && data[0].specification);
-      const specification = data[0].specification;
-      assert.strictEqual(Number(specification.limit), Number(fixture.limit));
-      assert.strictEqual(specification.currency, fixture.currency);
-      assert.strictEqual(specification.counterparty, fixture.counterparty);
-    });
+    const client: Client = this.client;
+    return client
+      .getTrustlines(address, options)
+      .then((data: string | any[]) => {
+        assert(data && data.length > 0 && data[0] && data[0].specification);
+        const specification = data[0].specification;
+        assert.strictEqual(Number(specification.limit), Number(fixture.limit));
+        assert.strictEqual(specification.currency, fixture.currency);
+        assert.strictEqual(specification.counterparty, fixture.counterparty);
+      });
   });
 
-  it("getBalances", function () {
+  it("getBalances", async function () {
     const fixture = requests.prepareTrustline.simple;
     const { currency, counterparty } = fixture;
     const options = { currency, counterparty };
-    return this.client.getBalances(address, options).then((data) => {
+    const client: Client = this.client;
+    return client.getBalances(address, options).then((data: string | any[]) => {
       assert(data && data.length > 0 && data[0]);
       assert.strictEqual(data[0].currency, fixture.currency);
       assert.strictEqual(data[0].counterparty, fixture.counterparty);
@@ -554,11 +585,12 @@ describe("integration tests", function () {
   });
 });
 
+// eslint-disable-next-line mocha/max-top-level-suites -- This is a separate test suite which shares a lot of code with above
 describe("integration tests - standalone rippled", function () {
   const instructions = { maxLedgerVersionOffset: 10 };
   this.timeout(TIMEOUT);
 
-  beforeEach(_.partial(setup, serverUrl));
+  beforeEach(_.partial(setupClient, serverUrl));
   afterEach(teardown);
   const address = "r5nx8ZkwEbFztnc8Qyi22DE9JYjRzNmvs";
   const secret = "ss6F8381Br6wwpy9p582H8sBt19J3";
@@ -567,7 +599,7 @@ describe("integration tests - standalone rippled", function () {
   const signer2address = "r3RtUvGw9nMoJ5FuHxuoVJvcENhKtuF9ud";
   const signer2secret = "shUHQnL4EH27V4EiBrj6EfhWvZngF";
 
-  it("submit multisigned transaction", function () {
+  it("submit multisigned transaction", async function () {
     const signers = {
       threshold: 2,
       weights: [
@@ -583,12 +615,15 @@ describe("integration tests - standalone rippled", function () {
             command: "ledger",
             ledger_index: "validated",
           })
-          .then((response) => response.result.ledger_index)
-          .then((ledgerVersion) => {
+          .then(
+            (response: { result: { ledger_index: any } }) =>
+              response.result.ledger_index
+          )
+          .then((ledgerVersion: number | null) => {
             minLedgerVersion = ledgerVersion;
             return this.client
               .prepareSettings(address, { signers }, instructions)
-              .then(async (prepared) => {
+              .then(async (prepared: Prepare) => {
                 return testTransaction(
                   this,
                   "SignerListSet",
@@ -608,7 +643,7 @@ describe("integration tests - standalone rippled", function () {
             { domain: "example.com" },
             multisignInstructions
           )
-          .then((prepared) => {
+          .then((prepared: { txJSON: any }) => {
             const signed1 = this.client.sign(prepared.txJSON, signer1secret, {
               signAs: signer1address,
             });
@@ -624,22 +659,27 @@ describe("integration tests - standalone rippled", function () {
                 command: "submit",
                 tx_blob: combined.signedTransaction,
               })
-              .then(async (response) =>
+              .then(async (response: any) =>
                 acceptLedger(this.client).then(() => response)
               )
-              .then(async (response) => {
-                assert.strictEqual(response.result.engine_result, "tesSUCCESS");
-                const options = { minLedgerVersion };
-                return verifyTransaction(
-                  this,
-                  combined.id,
-                  "AccountSet",
-                  options,
-                  {},
-                  address
-                );
-              })
-              .catch((error) => {
+              .then(
+                async (response: { result: { engine_result: unknown } }) => {
+                  assert.strictEqual(
+                    response.result.engine_result,
+                    "tesSUCCESS"
+                  );
+                  const options = { minLedgerVersion };
+                  return verifyTransaction(
+                    this,
+                    combined.id,
+                    "AccountSet",
+                    options,
+                    {},
+                    address
+                  );
+                }
+              )
+              .catch((error: { message: any }) => {
                 console.log(error.message);
                 throw error;
               });
