@@ -4,7 +4,6 @@ import assert from "assert";
 import _ from "lodash";
 import { isValidXAddress } from "ripple-address-codec";
 
-import { errors } from "xrpl-local/common";
 import { FormattedOrderSpecification } from "xrpl-local/common/types/objects";
 import { isValidSecret } from "xrpl-local/utils";
 
@@ -25,8 +24,6 @@ import { walletAddress, walletSecret } from "./wallet";
 
 // how long before each test case times out
 const TIMEOUT = 20000;
-// how long to wait between checks for validated ledger
-const INTERVAL = 1000;
 
 // eslint-disable-next-line node/no-process-env -- Allows the user to pass in different IP's for local rippled
 const HOST = process.env.HOST ?? "0.0.0.0";
@@ -40,6 +37,7 @@ async function acceptLedger(client: Client): Promise<any> {
   return client.connection.request({ command: "ledger_accept" });
 }
 
+// eslint-disable-next-line max-params -- Required for running checks while we move through the test
 async function verifyTransaction(
   testcase: Mocha.Context,
   hash: string,
@@ -47,52 +45,62 @@ async function verifyTransaction(
   options: { minLedgerVersion: number; maxLedgerVersion?: number },
   txData: JsonObject,
   account: string
-): Promise<void> {
+): Promise<{ txJSON: string }> {
   console.log("VERIFY...");
   const client: Client = testcase.client;
-  let data: TxResponse;
-  try {
-    data = await client.request({
-      command: "tx",
-      transaction: hash,
-      min_ledger: options.minLedgerVersion,
-      max_ledger: options.maxLedgerVersion,
-    });
+  const data: TxResponse = await client.request({
+    command: "tx",
+    transaction: hash,
+    min_ledger: options.minLedgerVersion,
+    max_ledger: options.maxLedgerVersion,
+  });
 
-    assert(data.result);
-    assert.strictEqual(data.result.TransactionType, type);
-    assert.strictEqual(data.result.Account, account);
-    if (typeof data.result.meta === "object") {
-      assert.strictEqual(data.result.meta.TransactionResult, "tesSUCCESS");
-    } else {
-      assert.strictEqual(data.result.meta, "tesSUCCESS");
-    }
-    if (testcase.transactions != null) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Is better than setting type by extracting to variable
-      testcase.transactions.push(hash);
-    }
-  } catch (error) {
-    if (error instanceof errors.PendingLedgerVersionError) {
-      console.log("NOT VALIDATED YET...");
-      await new Promise((resolve, reject) => {
-        setTimeout(() => {
-          verifyTransaction(
-            testcase,
-            hash,
-            type,
-            options,
-            txData,
-            account
-          ).then(resolve, reject);
-        }, INTERVAL);
-      });
-    } else {
-      console.log(error.stack);
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions -- All errors have messages
-      assert(false, `Transaction not successful: ${error.message}`);
-    }
+  assert(data.result);
+  assert.strictEqual(data.result.TransactionType, type);
+  assert.strictEqual(data.result.Account, account);
+  if (typeof data.result.meta === "object") {
+    assert.strictEqual(data.result.meta.TransactionResult, "tesSUCCESS");
+  } else {
+    assert.strictEqual(data.result.meta, "tesSUCCESS");
   }
+  if (testcase.transactions != null) {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Is better than setting type by extracting to variable
+    testcase.transactions.push(hash);
+  }
+
+  return {
+    txJSON: JSON.stringify(data.result),
+  };
 }
+
+//
+// return await new Promise((resolve, reject) => {
+// resolve({
+//         txJSON: encode(data.result),
+// });
+// });
+// } catch (error) {
+// if (error instanceof errors.PendingLedgerVersionError) {
+// console.log("NOT VALIDATED YET...");
+// await new Promise((resolve, reject) => {
+//         setTimeout(() => {
+//           verifyTransaction(
+//             testcase,
+//             hash,
+//             type,
+//             options,
+//             txData,
+//             account
+//           ).then(resolve, reject);
+//         }, INTERVAL);
+// });
+// } else {
+// console.log(error.stack);
+// // eslint-disable-next-line @typescript-eslint/restrict-template-expressions -- All errors have messages
+// assert(false, `Transaction not successful: ${error.message}`);
+// }
+// }
+// }
 
 async function testTransaction(
   testcase: Mocha.Context,
@@ -126,20 +134,16 @@ async function testTransaction(
     minLedgerVersion: lastClosedLedgerVersion,
     maxLedgerVersion: txData.LastLedgerSequence,
   };
-  ledgerAccept(testcase.client);
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      verifyTransaction(
-        testcase,
-        signedData.id,
-        type,
-        options,
-        // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Transactions look the same as JsonObjects
-        txData as unknown as JsonObject,
-        address
-      ).then(resolve, reject);
-    }, INTERVAL);
-  });
+  await ledgerAccept(testcase.client);
+  return verifyTransaction(
+    testcase,
+    signedData.id,
+    type,
+    options,
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Transactions look the same as JsonObjects
+    txData as unknown as JsonObject,
+    address
+  );
 }
 
 // return client
@@ -425,7 +429,7 @@ describe("integration tests", function () {
       });
   });
 
-  it("order", function () {
+  it("order", async function () {
     const orderSpecification = {
       direction: "buy",
       quantity: {
@@ -440,6 +444,7 @@ describe("integration tests", function () {
     };
     const expectedOrder = {
       flags: 0,
+      seq: undefined,
       quality: "1.185",
       taker_gets: "200",
       taker_pays: {
@@ -448,55 +453,44 @@ describe("integration tests", function () {
         issuer: "rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q",
       },
     };
-    return this.client
-      .request({
-        command: "ledger",
-        ledger_index: "validated",
-      })
-      .then(
-        (response: { result: { ledger_index: any } }) =>
-          response.result.ledger_index
-      )
-      .then((ledgerVersion: number) => {
-        return this.client
-          .prepareOrder(address, orderSpecification, instructions)
-          .then(async (prepared: Prepare) =>
-            testTransaction(this, "OfferCreate", ledgerVersion, prepared)
-          )
-          .then((result: { txJSON: string }) => {
-            const txData = JSON.parse(result.txJSON);
-            return this.client
-              .request({
-                command: "account_offers",
-                account: address,
-              })
-              .then(
-                (response: { result: { offers: any } }) =>
-                  response.result.offers
-              )
-              .then((orders: any[]) => {
-                assert(orders && orders.length > 0);
-                const createdOrder = orders.filter((order: { seq: any }) => {
-                  return order.seq === txData.Sequence;
-                })[0];
-                assert(createdOrder);
-                delete createdOrder.seq;
-                assert.deepEqual(createdOrder, expectedOrder);
-                return txData;
-              });
-          })
-          .then((txData: { Sequence: any }) =>
-            this.client
-              .prepareOrderCancellation(
-                address,
-                { orderSequence: txData.Sequence },
-                instructions
-              )
-              .then(async (prepared: Prepare) =>
-                testTransaction(this, "OfferCancel", ledgerVersion, prepared)
-              )
-          );
-      });
+    const client: Client = this.client;
+    const response = await client.request({
+      command: "ledger",
+      ledger_index: "validated",
+    });
+    const ledgerVersion: number = response.result.ledger_index;
+    const prepared: Prepare = await client.prepareOrder(
+      address,
+      orderSpecification,
+      instructions
+    );
+    const result: { txJSON: string } = await testTransaction(
+      this,
+      "OfferCreate",
+      ledgerVersion,
+      prepared
+    );
+    console.log(result, "<--- Result");
+    const txData = JSON.parse(result.txJSON);
+    const accountResponse = await client.request({
+      command: "account_offers",
+      account: address,
+    });
+    const orders = accountResponse.result.offers;
+    assert(orders && orders.length > 0);
+    const createdOrder = orders.filter((order: { seq: any }) => {
+      return order.seq === txData.Sequence;
+    })[0];
+    assert(createdOrder);
+    const createdOrderWithoutSeq = { ...createdOrder, seq: undefined };
+    assert.deepEqual(createdOrderWithoutSeq, expectedOrder);
+
+    const preparedOfferCancel: Prepare = await client.prepareOrderCancellation(
+      address,
+      { orderSequence: txData.Sequence },
+      instructions
+    );
+    testTransaction(this, "OfferCancel", ledgerVersion, preparedOfferCancel);
   });
 
   it("isConnected", function () {
