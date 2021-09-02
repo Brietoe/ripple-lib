@@ -14,7 +14,7 @@ import { generateXAddress } from "../../src/utils/generateAddress";
 import requests from "../fixtures/requests";
 
 import { payTo, ledgerAccept } from "./utils";
-import wallet from "./wallet";
+import { walletAddress, walletSecret } from "./wallet";
 
 // how long before each test case times out
 const TIMEOUT = 20000;
@@ -96,8 +96,8 @@ async function testTransaction(
   type: string,
   lastClosedLedgerVersion: number,
   prepared: Prepare,
-  address = wallet.getAddress(),
-  secret = wallet.getSecret()
+  address = walletAddress,
+  secret = walletSecret
 ) {
   const txJSON = prepared.txJSON;
   assert(txJSON, "missing txJSON");
@@ -172,7 +172,7 @@ async function makeTrustLine(
     .prepareTrustline(address, specification, {})
     .then(async (data) => {
       const signed = client.sign(data.txJSON, secret);
-      if (address === wallet.getAddress()) {
+      if (address === walletAddress) {
         // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Cleaner to read without additional typing
         testcase.transactions.push(signed.id);
       }
@@ -200,15 +200,15 @@ async function makeOrder(
     .then(async () => ledgerAccept(client));
 }
 
-function setupAccounts(testcase: Mocha.Context) {
+async function setupAccounts(testcase: Mocha.Context) {
   const client: Client = testcase.client;
 
   // TODO: payTo has Promise<SubmitResponse> type
   const promise = payTo(client, "rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM")
-    .then(() => payTo(client, wallet.getAddress()))
-    .then(() => payTo(client, testcase.newWallet.xAddress))
-    .then(() => payTo(client, "rKmBGxocj9Abgy25J51Mk1iqFzW9aVF9Tc"))
-    .then(() => payTo(client, "rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q"))
+    .then(async () => payTo(client, walletAddress))
+    .then(async () => payTo(client, testcase.newWallet.xAddress))
+    .then(async () => payTo(client, "rKmBGxocj9Abgy25J51Mk1iqFzW9aVF9Tc"))
+    .then(async () => payTo(client, "rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q"))
     .then(async () => {
       return client
         .prepareSettings(masterAccount, { defaultRipple: true })
@@ -219,11 +219,9 @@ function setupAccounts(testcase: Mocha.Context) {
             tx_blob: signed.signedTransaction,
           })
         )
-        .then(() => ledgerAccept(client));
+        .then(async () => ledgerAccept(client));
     })
-    .then(async () =>
-      makeTrustLine(testcase, wallet.getAddress(), wallet.getSecret())
-    )
+    .then(async () => makeTrustLine(testcase, walletAddress, walletSecret))
     .then(async () =>
       makeTrustLine(
         testcase,
@@ -231,8 +229,8 @@ function setupAccounts(testcase: Mocha.Context) {
         testcase.newWallet.secret
       )
     )
-    .then(() => payTo(client, wallet.getAddress(), "123", "USD", masterAccount))
-    .then(() => payTo(client, "rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q"))
+    .then(async () => payTo(client, walletAddress, "123", "USD", masterAccount))
+    .then(async () => payTo(client, "rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q"))
     .then(async () => {
       const orderSpecification = {
         direction: "buy",
@@ -290,7 +288,7 @@ async function suiteSetup(this: any) {
       .then(async () => (this.newWallet = generateXAddress()))
       // two times to give time to server to send `ledgerClosed` event
       // so getLedgerVersion will return right value
-      .then(() => ledgerAccept(this.client))
+      .then(async () => ledgerAccept(this.client))
       .then(() =>
         this.client
           .request({
@@ -305,13 +303,13 @@ async function suiteSetup(this: any) {
       .then((ledgerVersion) => {
         this.startLedgerVersion = ledgerVersion;
       })
-      .then(() => setupAccounts(this))
+      .then(async () => setupAccounts(this))
       .then(() => teardown.bind(this)())
   );
 }
 
 describe("integration tests", function () {
-  const address = wallet.getAddress();
+  const address = walletAddress;
   const instructions = { maxLedgerVersionOffset: 10 };
   this.timeout(TIMEOUT);
 
