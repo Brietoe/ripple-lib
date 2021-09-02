@@ -442,11 +442,12 @@ describe("integration tests", function () {
     });
   });
 
-  it("getTrustlines", function () {
+  it("getTrustlines", async function () {
     const fixture = requests.prepareTrustline.simple;
     const { currency, counterparty } = fixture;
     const options = { currency, counterparty };
-    return this.client.getTrustlines(address, options).then((data) => {
+    const client: Client = this.client;
+    return client.getTrustlines(address, options).then((data) => {
       assert(data && data.length > 0 && data[0] && data[0].specification);
       const specification = data[0].specification;
       assert.strictEqual(Number(specification.limit), Number(fixture.limit));
