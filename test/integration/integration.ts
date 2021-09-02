@@ -15,6 +15,7 @@ import {
   SubmitResponse,
   TxResponse,
 } from "../../src";
+import { AccountOffer } from "../../src/common/types/commands";
 import { Transaction } from "../../src/models/transactions";
 import { generateXAddress } from "../../src/utils/generateAddress";
 import requests from "../fixtures/requests";
@@ -472,9 +473,9 @@ describe("integration tests", function () {
       command: "account_offers",
       account: address,
     });
-    const orders = accountResponse.result.offers;
+    const orders: AccountOffer[] | undefined = accountResponse.result.offers;
     assert(orders && orders.length > 0);
-    const createdOrder = orders.filter((order: { seq: any }) => {
+    const createdOrder = orders.filter((order: AccountOffer) => {
       return order.seq === txData.Sequence;
     })[0];
     assert(createdOrder);
@@ -498,6 +499,7 @@ describe("integration tests", function () {
     const client: Client = this.client;
     return client.getFee().then((fee: string) => {
       assert.strictEqual(typeof fee, "string");
+      // eslint-disable-next-line no-restricted-globals -- This is a reasonable check
       assert(!isNaN(Number(fee)));
       assert(parseFloat(fee) === Number(fee));
     });
