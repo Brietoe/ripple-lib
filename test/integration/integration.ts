@@ -399,7 +399,7 @@ describe("integration tests", function () {
       });
   });
 
-  it("payment", function () {
+  it("payment", async function () {
     const amount = { currency: "XRP", value: "0.000001" };
     const paymentSpecification = {
       source: {
@@ -411,22 +411,18 @@ describe("integration tests", function () {
         amount,
       },
     };
-    return this.client
-      .request({
-        command: "ledger",
-        ledger_index: "validated",
-      })
-      .then(
-        (response: { result: { ledger_index: any } }) =>
-          response.result.ledger_index
-      )
-      .then((ledgerVersion: number) => {
-        return this.client
-          .preparePayment(address, paymentSpecification, instructions)
-          .then(async (prepared: Prepare) =>
-            testTransaction(this, "Payment", ledgerVersion, prepared)
-          );
-      });
+    const client: Client = this.client;
+    const response: LedgerResponse = await client.request({
+      command: "ledger",
+      ledger_index: "validated",
+    });
+    const ledgerVersion = response.result.ledger_index;
+    const prepared: Prepare = await client.preparePayment(
+      address,
+      paymentSpecification,
+      instructions
+    );
+    return testTransaction(this, "Payment", ledgerVersion, prepared);
   });
 
   it("order", async function () {
