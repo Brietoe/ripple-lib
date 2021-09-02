@@ -16,6 +16,8 @@ import {
   TxResponse,
 } from "../../src";
 import { AccountOffer } from "../../src/common/types/commands";
+import { FormattedTrustline } from "../../src/common/types/objects";
+import { GetBalances } from "../../src/ledger/balances";
 import { Transaction } from "../../src/models/transactions";
 import { generateXAddress } from "../../src/utils/generateAddress";
 import requests from "../fixtures/requests";
@@ -512,8 +514,8 @@ describe("integration tests", function () {
     const client: Client = this.client;
     return client
       .getTrustlines(address, options)
-      .then((data: string | any[]) => {
-        assert(data && data.length > 0 && data[0] && data[0].specification);
+      .then((data: FormattedTrustline[]) => {
+        assert(data.length > 0 && data[0] && data[0].specification);
         const specification = data[0].specification;
         assert.strictEqual(Number(specification.limit), Number(fixture.limit));
         assert.strictEqual(specification.currency, fixture.currency);
@@ -526,8 +528,8 @@ describe("integration tests", function () {
     const { currency, counterparty } = fixture;
     const options = { currency, counterparty };
     const client: Client = this.client;
-    return client.getBalances(address, options).then((data: string | any[]) => {
-      assert(data && data.length > 0 && data[0]);
+    return client.getBalances(address, options).then((data: GetBalances) => {
+      assert(data.length > 0 && data[0]);
       assert.strictEqual(data[0].currency, fixture.currency);
       assert.strictEqual(data[0].counterparty, fixture.counterparty);
     });
@@ -633,7 +635,9 @@ describe("integration tests - standalone rippled", function () {
   const instructions = { maxLedgerVersionOffset: 10 };
   this.timeout(TIMEOUT);
 
+  // eslint-disable-next-line mocha/no-hooks-for-single-case -- Used to setup second describe
   beforeEach(_.partial(setupClient, serverUrl));
+  // eslint-disable-next-line mocha/no-hooks-for-single-case -- Used to setup second describe
   afterEach(teardownClient);
   const address = "r5nx8ZkwEbFztnc8Qyi22DE9JYjRzNmvs";
   const secret = "ss6F8381Br6wwpy9p582H8sBt19J3";
