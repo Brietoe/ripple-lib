@@ -1,16 +1,14 @@
-/* eslint-disable no-console -- The console logs help debug failing tests */
+/* eslint-disable no-console -- Console comments make it easier to debug when tests fail */
 import assert from "assert";
 
 import _ from "lodash";
 import { isValidXAddress } from "ripple-address-codec";
 
-import { Client } from "xrpl-local";
+import { Client, Prepare } from "xrpl-local";
 import { errors } from "xrpl-local/common";
-import { FormattedOrderSpecification } from "xrpl-local/common/types/objects";
 import { isValidSecret } from "xrpl-local/utils";
 
-import { JsonObject } from "../../ripple-binary-codec/src/types/serialized-type";
-import TransactionMetadata from "../../src/models/transactions/metadata";
+import { JsonObject } from "../../ripple-binary-codec/dist/types/serialized-type";
 import { generateXAddress } from "../../src/utils/generateAddress";
 import requests from "../fixtures/requests";
 
@@ -22,9 +20,9 @@ const TIMEOUT = 20000;
 // how long to wait between checks for validated ledger
 const INTERVAL = 1000;
 
-// eslint-disable-next-line node/no-process-env -- This allows the user to pass in a custom ip
+// eslint-disable-next-line node/no-process-env -- Allows the user to pass in different IP's for local rippled
 const HOST = process.env.HOST ?? "0.0.0.0";
-// eslint-disable-next-line node/no-process-env -- This allows the user to pass in a port
+// eslint-disable-next-line node/no-process-env -- Allows the user to pass in different ports for local rippled
 const PORT = process.env.PORT ?? "6006";
 const serverUrl = `ws://${HOST}:${PORT}`;
 
@@ -41,63 +39,65 @@ async function verifyTransaction(
   options: { minLedgerVersion: any; maxLedgerVersion?: any },
   txData: JsonObject,
   account: string
-): Promise<any> {
+) {
   console.log("VERIFY...");
   const client: Client = testcase.client;
-  return client
-    .request({
-      command: "tx",
-      transaction: hash,
-      min_ledger: options.minLedgerVersion,
-      max_ledger: options.maxLedgerVersion,
-    })
-    .then((data) => {
-      assert(data);
-      assert(data.result);
-      assert.strictEqual(data.result.TransactionType, type);
-      assert.strictEqual(data.result.Account, account);
-      const metaResult: string | TransactionMetadata = data.result.meta;
-      if (typeof metaResult === "object") {
-        assert.strictEqual(metaResult.TransactionResult, "tesSUCCESS");
-      } else {
-        assert.strictEqual(metaResult, "tesSUCCESS");
-      }
-      if (testcase.transactions != null) {
-        testcase.transactions.push(hash);
-      }
-      return { txJSON: JSON.stringify(txData), id: hash, tx: data };
-    })
-    .catch(async (error) => {
-      if (error instanceof errors.PendingLedgerVersionError) {
-        console.log("NOT VALIDATED YET...");
-        return new Promise((resolve, reject) => {
-          setTimeout(
-            async () =>
-              verifyTransaction(
-                testcase,
-                hash,
-                type,
-                options,
-                txData,
-                account
-              ).then(resolve, reject),
-            INTERVAL
-          );
-        });
-      }
-      console.log(error.stack);
-      assert(false, `Transaction not successful: ${error.message}`);
-    });
+  return (
+    client
+      .request({
+        command: "tx",
+        transaction: hash,
+        min_ledger: options.minLedgerVersion,
+        max_ledger: options.maxLedgerVersion,
+      })
+      .then((data) => {
+        assert(data.result);
+        assert.strictEqual(data.result.TransactionType, type);
+        assert.strictEqual(data.result.Account, account);
+        if (typeof data.result.meta === "object") {
+          assert.strictEqual(data.result.meta.TransactionResult, "tesSUCCESS");
+        } else {
+          assert.strictEqual(data.result.meta, "tesSUCCESS");
+        }
+        if (testcase.transactions != null) {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Is better than setting type by extracting to variable
+          testcase.transactions.push(hash);
+        }
+        return { txJSON: JSON.stringify(txData), id: hash, tx: data };
+      })
+      // eslint-disable-next-line consistent-return -- The assert false guarantees we won't return undefined
+      .catch(async (error: Error) => {
+        if (error instanceof errors.PendingLedgerVersionError) {
+          console.log("NOT VALIDATED YET...");
+          return new Promise((resolve, reject) => {
+            setTimeout(
+              async () =>
+                verifyTransaction(
+                  testcase,
+                  hash,
+                  type,
+                  options,
+                  txData,
+                  account
+                ).then(resolve, reject),
+              INTERVAL
+            );
+          });
+        }
+        console.log(error.stack);
+        assert(false, `Transaction not successful: ${error.message}`);
+      })
+  );
 }
 
 async function testTransaction(
   testcase: Mocha.Context,
   type: string,
   lastClosedLedgerVersion: number,
-  prepared: { txJSON: string },
+  prepared: Prepare,
   address = wallet.getAddress(),
   secret = wallet.getSecret()
-): Promise<any> {
+) {
   const txJSON = prepared.txJSON;
   assert(txJSON, "missing txJSON");
   const txData = JSON.parse(txJSON);
@@ -107,8 +107,7 @@ async function testTransaction(
   console.log("PREPARED...");
   return client
     .request({ command: "submit", tx_blob: signedData.signedTransaction })
-    .then((response) => {
-      assert(testcase.test, "Missing testcase.test");
+    .then(async (response) => {
       return testcase.test.title.includes("multisign")
         ? acceptLedger(client).then(() => response)
         : response;
@@ -138,7 +137,7 @@ async function testTransaction(
     });
 }
 
-function setup(this: any, server = serverUrl): void {
+function setup(this: any, server = serverUrl) {
   this.client = new Client(server);
   console.log("CONNECTING...");
   return this.client.connect().then(
@@ -155,12 +154,8 @@ function setup(this: any, server = serverUrl): void {
 const masterAccount = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh";
 const masterSecret = "snoPBrXtMeMyMHUVTgbuqAfg1SUTb";
 
-async function makeTrustLine(
-  testcase: Mocha.Context,
-  address: string,
-  secret: string
-): Promise<any> {
-  const client: Client = testcase.client;
+function makeTrustLine(testcase, address, secret) {
+  const client = testcase.client;
   const specification = {
     currency: "USD",
     counterparty: masterAccount,
@@ -169,7 +164,7 @@ async function makeTrustLine(
   };
   const trust = client
     .prepareTrustline(address, specification, {})
-    .then(async (data) => {
+    .then((data) => {
       const signed = client.sign(data.txJSON, secret);
       if (address === wallet.getAddress()) {
         testcase.transactions.push(signed.id);
@@ -183,35 +178,29 @@ async function makeTrustLine(
   return trust;
 }
 
-// eslint-disable-next-line max-params -- The extra parameter let's us abstract away the promise logic
-async function makeOrder(
-  client: Client,
-  address: string,
-  specification: FormattedOrderSpecification,
-  secret: string
-): Promise<any> {
+function makeOrder(client, address, specification, secret) {
   return client
     .prepareOrder(address, specification)
     .then((data) => client.sign(data.txJSON, secret))
-    .then(async (signed) =>
+    .then((signed) =>
       client.request({ command: "submit", tx_blob: signed.signedTransaction })
     )
     .then(() => ledgerAccept(client));
 }
 
-function setupAccounts(testcase: Mocha.Context) {
-  const client: Client = testcase.client;
+function setupAccounts(testcase) {
+  const client = testcase.client;
 
   const promise = payTo(client, "rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM")
     .then(() => payTo(client, wallet.getAddress()))
     .then(() => payTo(client, testcase.newWallet.xAddress))
     .then(() => payTo(client, "rKmBGxocj9Abgy25J51Mk1iqFzW9aVF9Tc"))
     .then(() => payTo(client, "rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q"))
-    .then(async () => {
+    .then(() => {
       return client
         .prepareSettings(masterAccount, { defaultRipple: true })
         .then((data) => client.sign(data.txJSON, masterSecret))
-        .then(async (signed) =>
+        .then((signed) =>
           client.request({
             command: "submit",
             tx_blob: signed.signedTransaction,
@@ -219,10 +208,10 @@ function setupAccounts(testcase: Mocha.Context) {
         )
         .then(() => ledgerAccept(client));
     })
-    .then(async () =>
+    .then(() =>
       makeTrustLine(testcase, wallet.getAddress(), wallet.getSecret())
     )
-    .then(async () =>
+    .then(() =>
       makeTrustLine(
         testcase,
         testcase.newWallet.xAddress,
@@ -231,7 +220,7 @@ function setupAccounts(testcase: Mocha.Context) {
     )
     .then(() => payTo(client, wallet.getAddress(), "123", "USD", masterAccount))
     .then(() => payTo(client, "rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q"))
-    .then(async () => {
+    .then(() => {
       const orderSpecification = {
         direction: "buy",
         quantity: {
@@ -251,7 +240,7 @@ function setupAccounts(testcase: Mocha.Context) {
         testcase.newWallet.secret
       );
     })
-    .then(async () => {
+    .then(() => {
       const orderSpecification = {
         direction: "buy",
         quantity: {
@@ -274,9 +263,8 @@ function setupAccounts(testcase: Mocha.Context) {
   return promise;
 }
 
-async function tearDown(this: any): Promise<void> {
-  const client: Client = this.client;
-  return client.disconnect();
+function teardown(this: any) {
+  return this.client.disconnect();
 }
 
 function suiteSetup(this: any) {
@@ -302,7 +290,7 @@ function suiteSetup(this: any) {
         this.startLedgerVersion = ledgerVersion;
       })
       .then(() => setupAccounts(this))
-      .then(async () => tearDown.bind(this)())
+      .then(() => teardown.bind(this)())
   );
 }
 
@@ -313,25 +301,30 @@ describe("integration tests", function () {
 
   before(suiteSetup);
   beforeEach(_.partial(setup, serverUrl));
-  afterEach(tearDown);
+  afterEach(teardown);
 
-  it("trustline", function () {
-    return this.client
+  it("trustline", async function () {
+    const client: Client = this.client;
+
+    return client
       .request({
         command: "ledger",
         ledger_index: "validated",
       })
       .then((response) => response.result.ledger_index)
-      .then((ledgerVersion) => {
-        return this.client
-          .prepareTrustline(
-            address,
-            requests.prepareTrustline.simple,
-            instructions
-          )
-          .then(async (prepared) =>
-            testTransaction(this, "TrustSet", ledgerVersion, prepared)
-          );
+      .then(async (ledgerVersion) => {
+        return (
+          client
+            .prepareTrustline(
+              address,
+              requests.prepareTrustline.simple,
+              instructions
+            )
+            // eslint-disable-next-line max-nested-callbacks -- The fourth layer doesn't add much complexity
+            .then(async (prepared) =>
+              testTransaction(this, "TrustSet", ledgerVersion, prepared)
+            )
+        );
       });
   });
 
@@ -442,12 +435,11 @@ describe("integration tests", function () {
     });
   });
 
-  it("getTrustlines", async function () {
+  it("getTrustlines", function () {
     const fixture = requests.prepareTrustline.simple;
     const { currency, counterparty } = fixture;
     const options = { currency, counterparty };
-    const client: Client = this.client;
-    return client.getTrustlines(address, options).then((data) => {
+    return this.client.getTrustlines(address, options).then((data) => {
       assert(data && data.length > 0 && data[0] && data[0].specification);
       const specification = data[0].specification;
       assert.strictEqual(Number(specification.limit), Number(fixture.limit));
@@ -467,7 +459,7 @@ describe("integration tests", function () {
     });
   });
 
-  it("getOrderbook", function () {
+  it("getOrderbook", async function () {
     const orderbook = {
       base: {
         currency: "XRP",
@@ -477,17 +469,18 @@ describe("integration tests", function () {
         counterparty: masterAccount,
       },
     };
-    return this.client.getOrderbook(address, orderbook).then((book) => {
-      assert(book && book.bids && book.bids.length > 0);
-      assert(book.asks && book.asks.length > 0);
+    const client: Client = this.client;
+    return client.getOrderbook(address, orderbook).then((book) => {
+      assert(book.bids.length > 0);
+      assert(book.asks.length > 0);
       const bid = book.bids[0];
-      assert(bid && bid.specification && bid.specification.quantity);
+      assert(bid.specification.quantity);
       assert(bid.specification.totalPrice);
       assert.strictEqual(bid.specification.direction, "buy");
       assert.strictEqual(bid.specification.quantity.currency, "XRP");
       assert.strictEqual(bid.specification.totalPrice.currency, "USD");
       const ask = book.asks[0];
-      assert(ask && ask.specification && ask.specification.quantity);
+      assert(ask.specification.quantity);
       assert(ask.specification.totalPrice);
       assert.strictEqual(ask.specification.direction, "sell");
       assert.strictEqual(ask.specification.quantity.currency, "XRP");
@@ -554,7 +547,8 @@ describe("integration tests", function () {
 
   it("generateWallet", function () {
     const newWallet = generateXAddress();
-    assert(newWallet && newWallet.xAddress && newWallet.secret);
+    assert(newWallet.xAddress);
+    assert(newWallet.secret);
     assert(isValidXAddress(newWallet.xAddress));
     assert(isValidSecret(newWallet.secret));
   });
@@ -565,7 +559,7 @@ describe("integration tests - standalone rippled", function () {
   this.timeout(TIMEOUT);
 
   beforeEach(_.partial(setup, serverUrl));
-  afterEach(tearDown);
+  afterEach(teardown);
   const address = "r5nx8ZkwEbFztnc8Qyi22DE9JYjRzNmvs";
   const secret = "ss6F8381Br6wwpy9p582H8sBt19J3";
   const signer1address = "rQDhz2ZNXmhxzCYwxU6qAbdxsHA4HV45Y2";
