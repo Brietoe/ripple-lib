@@ -701,16 +701,11 @@ describe("integration tests - standalone rippled", function () {
     assert.strictEqual(acceptResponse.result.engine_result, "tesSUCCESS");
     const options = { minLedgerVersion };
 
-    verifyTransaction(
-      this,
-      combined.id,
-      "AccountSet",
-      options,
-      {},
-      address
-    ).catch((error: Error) => {
-      console.log(error.message);
-      throw error;
-    });
+    verifyTransaction(this, combined.id, "AccountSet", options, address).catch(
+      (error: Error) => {
+        console.log(error.message);
+        throw error;
+      }
+    );
   });
 });
