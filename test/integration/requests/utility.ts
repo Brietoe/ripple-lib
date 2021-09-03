@@ -1,14 +1,13 @@
 import { assert } from "chai";
 import _ from "lodash";
 
-import { PingResponse, RandomResponse } from "../../src";
-
+import { PingResponse, RandomResponse } from "../../../src";
 import {
   serverUrl,
   setupClient,
   suiteTestSetup,
   teardownClient,
-} from "./testUtils";
+} from "../testUtils";
 
 // how long before each test case times out
 const TIMEOUT = 20000;
