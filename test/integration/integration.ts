@@ -78,35 +78,6 @@ async function verifyTransaction(
   };
 }
 
-//
-// return await new Promise((resolve, reject) => {
-// resolve({
-//         txJSON: encode(data.result),
-// });
-// });
-// } catch (error) {
-// if (error instanceof errors.PendingLedgerVersionError) {
-// console.log("NOT VALIDATED YET...");
-// await new Promise((resolve, reject) => {
-//         setTimeout(() => {
-//           verifyTransaction(
-//             testcase,
-//             hash,
-//             type,
-//             options,
-//             txData,
-//             account
-//           ).then(resolve, reject);
-//         }, INTERVAL);
-// });
-// } else {
-// console.log(error.stack);
-// // eslint-disable-next-line @typescript-eslint/restrict-template-expressions -- All errors have messages
-// assert(false, `Transaction not successful: ${error.message}`);
-// }
-// }
-// }
-
 // eslint-disable-next-line max-params -- The extra parameters let us call verifyTransaction
 async function testTransaction(
   testcase: Mocha.Context,
@@ -143,38 +114,6 @@ async function testTransaction(
   await ledgerAccept(testcase.client);
   return verifyTransaction(testcase, signedData.id, type, options, address);
 }
-
-// return client
-// .request({ command: "submit", tx_blob: signedData.signedTransaction })
-// .then(async (response) => {
-//       return testcase.test?.title.includes("multisign")
-//         ? acceptLedger(client).then(() => response)
-//         : response;
-// })
-// .then(async (response) => {
-//       console.log("SUBMITTED...");
-//       assert.strictEqual(response.result.engine_result, "tesSUCCESS");
-//       const options = {
-//         minLedgerVersion: lastClosedLedgerVersion,
-//         maxLedgerVersion: txData.LastLedgerSequence,
-//       };
-//       ledgerAccept(testcase.client);
-//       return new Promise((resolve, reject) => {
-//         setTimeout(
-//           async () =>
-//             verifyTransaction(
-//               testcase,
-//               signedData.id,
-//               type,
-//               options,
-//               txData,
-//               address
-//             ).then(resolve, reject),
-//           INTERVAL
-//         );
-//       });
-// });
-// }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Typing 'this' doesn't offer much
 async function setupClient(this: any, server = serverUrl): Promise<void> {
@@ -338,32 +277,6 @@ async function suiteTestSetup(this: any): Promise<void> {
   await setupAccounts(this);
   return teardownClient.bind(this)();
 }
-// return (
-//   setupClient
-//     .bind(this)(serverUrl)
-//     .then(async () => ledgerAccept(this.client))
-//     .then(async () => (this.newWallet = generateXAddress()))
-//     // two times to give time to server to send `ledgerClosed` event
-//     // so getLedgerVersion will return right value
-//     .then(async () => ledgerAccept(this.client))
-//     .then(() =>
-//       this.client
-//         .request({
-//           command: "ledger",
-//           ledger_index: "validated",
-//         })
-//         .then(
-//           (response: { result: { ledger_index: any } }) =>
-//             response.result.ledger_index
-//         )
-//     )
-//     .then((ledgerVersion) => {
-//       this.startLedgerVersion = ledgerVersion;
-//     })
-//     .then(async () => setupAccounts(this))
-//     .then(async () => teardownClient.bind(this)())
-// );
-// }
 
 describe("integration tests", function () {
   const address = walletAddress;
