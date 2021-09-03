@@ -156,10 +156,11 @@ export class Connection extends EventEmitter {
   private ws: WebSocket | null = null;
   private reconnectTimeoutID: null | NodeJS.Timeout = null;
   private heartbeatIntervalID: null | NodeJS.Timeout = null;
-  private readonly retryConnectionBackoff = new ExponentialBackoff({
-    min: 100,
-    max: SECONDS_PER_MINUTE * 1000,
-  });
+  private readonly retryConnectionBackoff: ExponentialBackoff =
+    new ExponentialBackoff({
+      min: 100,
+      max: SECONDS_PER_MINUTE * 1000,
+    });
 
   private readonly config: ConnectionOptions;
   private readonly requestManager = new RequestManager();
