@@ -7,7 +7,6 @@ import { isValidXAddress } from "ripple-address-codec";
 import { FormattedOrderSpecification } from "xrpl-local/common/types/objects";
 import { isValidSecret } from "xrpl-local/utils";
 
-import { JsonObject } from "../../ripple-binary-codec/dist/types/serialized-type";
 import {
   Client,
   LedgerResponse,
@@ -16,7 +15,10 @@ import {
   TxResponse,
 } from "../../src";
 import { AccountOffer } from "../../src/common/types/commands";
-import { FormattedTrustline } from "../../src/common/types/objects";
+import {
+  FormattedTrustline,
+  SignedTransaction,
+} from "../../src/common/types/objects";
 import { GetBalances } from "../../src/ledger/balances";
 import { Transaction } from "../../src/models/transactions";
 import { generateXAddress } from "../../src/utils/generateAddress";
@@ -36,6 +38,7 @@ const serverUrl = `ws://${HOST}:${PORT}`;
 
 console.log(serverUrl);
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- The return type is legitimately any
 async function acceptLedger(client: Client): Promise<any> {
   return client.connection.request({ command: "ledger_accept" });
 }
@@ -46,7 +49,6 @@ async function verifyTransaction(
   hash: string,
   type: string,
   options: { minLedgerVersion: number; maxLedgerVersion?: number },
-  txData: JsonObject,
   account: string
 ): Promise<{ txJSON: string }> {
   console.log("VERIFY...");
@@ -105,6 +107,7 @@ async function verifyTransaction(
 // }
 // }
 
+// eslint-disable-next-line max-params -- The extra parameters let us call verifyTransaction
 async function testTransaction(
   testcase: Mocha.Context,
   type: string,
@@ -112,7 +115,7 @@ async function testTransaction(
   prepared: Prepare,
   address = walletAddress,
   secret = walletSecret
-) {
+): Promise<{ txJSON: string }> {
   const txJSON = prepared.txJSON;
   assert(txJSON, "missing txJSON");
   const txData: Transaction = JSON.parse(txJSON);
@@ -138,15 +141,7 @@ async function testTransaction(
     maxLedgerVersion: txData.LastLedgerSequence,
   };
   await ledgerAccept(testcase.client);
-  return verifyTransaction(
-    testcase,
-    signedData.id,
-    type,
-    options,
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- Transactions look the same as JsonObjects
-    txData as unknown as JsonObject,
-    address
-  );
+  return verifyTransaction(testcase, signedData.id, type, options, address);
 }
 
 // return client
@@ -181,7 +176,8 @@ async function testTransaction(
 // });
 // }
 
-async function setupClient(this: any, server = serverUrl) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Typing 'this' doesn't offer much
+async function setupClient(this: any, server = serverUrl): Promise<void> {
   this.client = new Client(server);
   console.log("CONNECTING...");
   const client: Client = this.client;
@@ -203,6 +199,7 @@ async function makeTrustLine(
   testcase: Mocha.Context,
   address: string,
   secret: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- The return type is legitimately any
 ): Promise<any> {
   const client: Client = testcase.client;
   const specification = {
@@ -228,11 +225,13 @@ async function makeTrustLine(
   return trust;
 }
 
+// eslint-disable-next-line max-params -- It's worth the extra parameter to simplify the logic
 async function makeOrder(
   client: Client,
   address: string,
   specification: FormattedOrderSpecification,
   secret: string
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- The return type is legitimately any
 ): Promise<any> {
   return client
     .prepareOrder(address, specification)
@@ -243,10 +242,10 @@ async function makeOrder(
     .then(async () => ledgerAccept(client));
 }
 
-async function setupAccounts(testcase: Mocha.Context) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- The return type is legitimately any
+async function setupAccounts(testcase: Mocha.Context): Promise<any> {
   const client: Client = testcase.client;
 
-  // TODO: payTo has Promise<SubmitResponse> type
   const promise = payTo(client, "rMH4UxPrbuMa1spCBR98hLLyNJp4d8p4tM")
     .then(async () => payTo(client, walletAddress))
     .then(async () => payTo(client, testcase.newWallet.xAddress))
@@ -255,8 +254,10 @@ async function setupAccounts(testcase: Mocha.Context) {
     .then(async () => {
       return client
         .prepareSettings(masterAccount, { defaultRipple: true })
-        .then((data: { txJSON: any }) => client.sign(data.txJSON, masterSecret))
-        .then(async (signed: { signedTransaction: any }) =>
+        .then((data: { txJSON: string }) =>
+          client.sign(data.txJSON, masterSecret)
+        )
+        .then(async (signed: { signedTransaction: string }) =>
           client.request({
             command: "submit",
             tx_blob: signed.signedTransaction,
@@ -307,25 +308,21 @@ async function setupAccounts(testcase: Mocha.Context) {
           counterparty: masterAccount,
         },
       };
-      return makeOrder(
-        testcase.client,
-        masterAccount,
-        orderSpecification,
-        masterSecret
-      );
+      return makeOrder(client, masterAccount, orderSpecification, masterSecret);
     });
   return promise;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Typing 'this' doesn't offer much
 async function teardownClient(this: any): Promise<void> {
   const client: Client = this.client;
   return client.disconnect();
 }
 
-async function suiteSetup(this: any): Promise<void> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Typing 'this' doesn't offer much
+async function suiteTestSetup(this: any): Promise<void> {
   this.transactions = [];
 
-  // TODO: Figure out if this should be setup (Implicitly defined somewhere), or setupClient (Local definition)
   await setupClient.bind(this)(serverUrl);
   const client: Client = this.client;
   await ledgerAccept(client);
@@ -373,7 +370,7 @@ describe("integration tests", function () {
   const instructions = { maxLedgerVersionOffset: 10 };
   this.timeout(TIMEOUT);
 
-  before(suiteSetup);
+  before(suiteTestSetup);
   beforeEach(_.partial(setupClient, serverUrl));
   afterEach(teardownClient);
 
@@ -654,83 +651,66 @@ describe("integration tests - standalone rippled", function () {
         { address: signer2address, weight: 1 },
       ],
     };
-    let minLedgerVersion: number;
-    return payTo(this.client, address)
-      .then(() => {
-        return this.client
-          .request({
-            command: "ledger",
-            ledger_index: "validated",
-          })
-          .then(
-            (response: { result: { ledger_index: any } }) =>
-              response.result.ledger_index
-          )
-          .then((ledgerVersion: number) => {
-            minLedgerVersion = ledgerVersion;
-            return this.client
-              .prepareSettings(address, { signers }, instructions)
-              .then(async (prepared: Prepare) => {
-                return testTransaction(
-                  this,
-                  "SignerListSet",
-                  ledgerVersion,
-                  prepared,
-                  address,
-                  secret
-                );
-              });
-          });
-      })
-      .then(() => {
-        const multisignInstructions = { ...instructions, signersCount: 2 };
-        return this.client
-          .prepareSettings(
-            address,
-            { domain: "example.com" },
-            multisignInstructions
-          )
-          .then((prepared: { txJSON: any }) => {
-            const signed1 = this.client.sign(prepared.txJSON, signer1secret, {
-              signAs: signer1address,
-            });
-            const signed2 = this.client.sign(prepared.txJSON, signer2secret, {
-              signAs: signer2address,
-            });
-            const combined = this.client.combine([
-              signed1.signedTransaction,
-              signed2.signedTransaction,
-            ]);
-            return this.client
-              .request({
-                command: "submit",
-                tx_blob: combined.signedTransaction,
-              })
-              .then(async (response: any) =>
-                acceptLedger(this.client).then(() => response)
-              )
-              .then(
-                async (response: { result: { engine_result: unknown } }) => {
-                  assert.strictEqual(
-                    response.result.engine_result,
-                    "tesSUCCESS"
-                  );
-                  const options = { minLedgerVersion };
-                  return verifyTransaction(
-                    this,
-                    combined.id,
-                    "AccountSet",
-                    options,
-                    {},
-                    address
-                  );
-                }
-              )
-              .catch((error: { message: any }) => {
-                console.log(error.message);
-                throw error;
-              });
-          });
-      });
+    const client: Client = this.client;
+    await payTo(client, address);
+    const response = await client.request({
+      command: "ledger",
+      ledger_index: "validated",
+    });
+    const ledgerVersion: number = response.result.ledger_index;
+    const minLedgerVersion = ledgerVersion;
+    const prepared: Prepare = await client.prepareSettings(
+      address,
+      { signers },
+      instructions
+    );
+    await testTransaction(
+      this,
+      "SignerListSet",
+      ledgerVersion,
+      prepared,
+      address,
+      secret
+    );
+
+    const multisignInstructions = { ...instructions, signersCount: 2 };
+
+    const multisignPrepared = await client.prepareSettings(
+      address,
+      { domain: "example.com" },
+      multisignInstructions
+    );
+    const signed1 = client.sign(multisignPrepared.txJSON, signer1secret, {
+      signAs: signer1address,
+    });
+    const signed2 = client.sign(multisignPrepared.txJSON, signer2secret, {
+      signAs: signer2address,
+    });
+    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- SignedTransaction is the well-typed version
+    const combined: SignedTransaction = client.combine([
+      signed1.signedTransaction,
+      signed2.signedTransaction,
+    ]) as SignedTransaction;
+    const submittedResponse = await client.request({
+      command: "submit",
+      tx_blob: combined.signedTransaction,
+    });
+    const acceptResponse = await acceptLedger(client).then(
+      () => submittedResponse
+    );
+    assert.strictEqual(acceptResponse.result.engine_result, "tesSUCCESS");
+    const options = { minLedgerVersion };
+
+    verifyTransaction(
+      this,
+      combined.id,
+      "AccountSet",
+      options,
+      {},
+      address
+    ).catch((error: Error) => {
+      console.log(error.message);
+      throw error;
+    });
   });
 });
