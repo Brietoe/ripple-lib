@@ -3,15 +3,15 @@ import assert from "assert";
 import _ from "lodash";
 import { isValidXAddress } from "ripple-address-codec";
 
-import { isValidSecret } from "xrpl-local/utils";
-
 import {
   Client,
   LedgerResponse,
   Prepare,
   SubmitResponse,
   TxResponse,
-} from "../../src";
+} from "xrpl-local";
+import { isValidSecret } from "xrpl-local/utils";
+
 import { AccountOffer } from "../../src/common/types/commands";
 import {
   FormattedTrustline,
@@ -29,7 +29,7 @@ import {
   suiteTestSetup,
   teardownClient,
   log,
-} from "./testUtils";
+} from "./setupTests";
 import { payTo, ledgerAccept } from "./utils";
 import { walletAddress, walletSecret } from "./wallet";
 

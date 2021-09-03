@@ -1,8 +1,7 @@
-/* eslint-disable no-console -- Console comments make it easier to debug when tests fail */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types -- Annoying to resolve and not worth it */
 import { Client, generateXAddress } from "xrpl-local";
-import { FormattedOrderSpecification } from "xrpl-local/common/types/objects";
 
-import { ledgerAccept, payTo } from "./utils";
+import { ledgerAccept, payTo, makeOrder, makeTrustLine } from "./utils";
 import { walletAddress, walletSecret } from "./wallet";
 
 const DEBUG = false;
@@ -13,9 +12,10 @@ const HOST = process.env.HOST ?? "0.0.0.0";
 const PORT = process.env.PORT ?? "6006";
 export const serverUrl = `ws://${HOST}:${PORT}`;
 
-export function log(...args: any): void {
+export function log(...args: unknown[]): void {
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Could be set to true
   if (DEBUG) {
+    // eslint-disable-next-line no-console -- Printing for debugging purposes
     console.log(...args);
   }
 }
@@ -41,52 +41,6 @@ export async function setupClient(
 
 export const masterAccount = "rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTh";
 const masterSecret = "snoPBrXtMeMyMHUVTgbuqAfg1SUTb";
-
-export async function makeTrustLine(
-  testcase: Mocha.Context,
-  address: string,
-  secret: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- The return type is legitimately any
-): Promise<any> {
-  const client: Client = testcase.client;
-  const specification = {
-    currency: "USD",
-    counterparty: masterAccount,
-    limit: "1341.1",
-    ripplingDisabled: true,
-  };
-  const trust = client
-    .prepareTrustline(address, specification, {})
-    .then(async (data) => {
-      const signed = client.sign(data.txJSON, secret);
-      if (address === walletAddress) {
-        testcase.transactions.push(signed.id);
-      }
-      return client.request({
-        command: "submit",
-        tx_blob: signed.signedTransaction,
-      });
-    })
-    .then(async () => ledgerAccept(client));
-  return trust;
-}
-
-// eslint-disable-next-line max-params -- It's worth the extra parameter to simplify the logic
-export async function makeOrder(
-  client: Client,
-  address: string,
-  specification: FormattedOrderSpecification,
-  secret: string
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- The return type is legitimately any
-): Promise<any> {
-  const order = await client.prepareOrder(address, specification);
-  const signedOrder = client.sign(order.txJSON, secret);
-  await client.request({
-    command: "submit",
-    tx_blob: signedOrder.signedTransaction,
-  });
-  await ledgerAccept(client);
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- The return type is legitimately any
 export async function setupAccounts(testcase: Mocha.Context): Promise<any> {
