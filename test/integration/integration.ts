@@ -1,4 +1,3 @@
-/* eslint-disable no-console -- Console comments make it easier to debug when tests fail */
 import assert from "assert";
 
 import _ from "lodash";
@@ -29,6 +28,7 @@ import {
   setupClient,
   suiteTestSetup,
   teardownClient,
+  log,
 } from "./testUtils";
 import { payTo, ledgerAccept } from "./utils";
 import { walletAddress, walletSecret } from "./wallet";
@@ -36,7 +36,7 @@ import { walletAddress, walletSecret } from "./wallet";
 // how long before each test case times out
 const TIMEOUT = 20000;
 
-console.log(serverUrl);
+log(serverUrl);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- The return type is legitimately any
 async function acceptLedger(client: Client): Promise<any> {
@@ -51,7 +51,7 @@ async function verifyTransaction(
   options: { minLedgerVersion: number; maxLedgerVersion?: number },
   account: string
 ): Promise<{ txJSON: string }> {
-  console.log("VERIFY...");
+  log("VERIFY...");
   const client: Client = testcase.client;
   const data: TxResponse = await client.request({
     command: "tx",
@@ -69,7 +69,6 @@ async function verifyTransaction(
     assert.strictEqual(data.result.meta, "tesSUCCESS");
   }
   if (testcase.transactions != null) {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Is better than setting type by extracting to variable
     testcase.transactions.push(hash);
   }
 
@@ -93,7 +92,7 @@ async function testTransaction(
   assert.strictEqual(txData.Account, address);
   const client: Client = testcase.client;
   const signedData = client.sign(txJSON, secret);
-  console.log("PREPARED...");
+  log("PREPARED...");
 
   const attemptedResponse: SubmitResponse = await client.request({
     command: "submit",
@@ -105,7 +104,7 @@ async function testTransaction(
     ? await acceptLedger(client).then(() => attemptedResponse)
     : attemptedResponse;
 
-  console.log("SUBMITTED...");
+  log("SUBMITTED...");
   assert.strictEqual(submittedResponse.result.engine_result, "tesSUCCESS");
   const options = {
     minLedgerVersion: lastClosedLedgerVersion,
@@ -216,7 +215,7 @@ describe("integration tests", function () {
       ledgerVersion,
       prepared
     );
-    console.log(result, "<--- Result");
+    log(result, "<--- Result");
     const txData = JSON.parse(result.txJSON);
     const accountResponse = await client.request({
       command: "account_offers",
@@ -436,7 +435,6 @@ describe("integration tests - standalone rippled", function () {
     const signed2 = client.sign(multisignPrepared.txJSON, signer2secret, {
       signAs: signer2address,
     });
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions -- SignedTransaction is the well-typed version
     const combined: SignedTransaction = client.combine([
       signed1.signedTransaction,
       signed2.signedTransaction,
@@ -453,7 +451,7 @@ describe("integration tests - standalone rippled", function () {
 
     verifyTransaction(this, combined.id, "AccountSet", options, address).catch(
       (error: Error) => {
-        console.log(error.message);
+        log(error.message);
         throw error;
       }
     );

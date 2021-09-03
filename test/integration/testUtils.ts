@@ -1,8 +1,11 @@
-import { Client, generateXAddress, LedgerResponse } from "xrpl-local";
+/* eslint-disable no-console -- Console comments make it easier to debug when tests fail */
+import { Client, generateXAddress } from "xrpl-local";
 import { FormattedOrderSpecification } from "xrpl-local/common/types/objects";
 
 import { ledgerAccept, payTo } from "./utils";
 import { walletAddress, walletSecret } from "./wallet";
+
+const DEBUG = false;
 
 // eslint-disable-next-line node/no-process-env -- Allows the user to pass in different IP's for local rippled
 const HOST = process.env.HOST ?? "0.0.0.0";
@@ -10,20 +13,27 @@ const HOST = process.env.HOST ?? "0.0.0.0";
 const PORT = process.env.PORT ?? "6006";
 export const serverUrl = `ws://${HOST}:${PORT}`;
 
+export function log(...args: any): void {
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- Could be set to true
+  if (DEBUG) {
+    console.log(...args);
+  }
+}
+
 export async function setupClient(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Typing 'this' doesn't offer much
   this: any,
   server = serverUrl
 ): Promise<void> {
   this.client = new Client(server);
-  console.log("CONNECTING...");
+  log("CONNECTING...");
   const client: Client = this.client;
   return client.connect().then(
     () => {
-      console.log("CONNECTED...");
+      log("CONNECTED...");
     },
     (error) => {
-      console.log("ERROR:", error);
+      log("ERROR:", error);
       throw error;
     }
   );
@@ -50,7 +60,6 @@ export async function makeTrustLine(
     .then(async (data) => {
       const signed = client.sign(data.txJSON, secret);
       if (address === walletAddress) {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call -- Cleaner to read without additional typing
         testcase.transactions.push(signed.id);
       }
       return client.request({
@@ -70,13 +79,13 @@ export async function makeOrder(
   secret: string
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- The return type is legitimately any
 ): Promise<any> {
-  return client
-    .prepareOrder(address, specification)
-    .then((data) => client.sign(data.txJSON, secret))
-    .then(async (signed) =>
-      client.request({ command: "submit", tx_blob: signed.signedTransaction })
-    )
-    .then(async () => ledgerAccept(client));
+  const order = await client.prepareOrder(address, specification);
+  const signedOrder = client.sign(order.txJSON, secret);
+  await client.request({
+    command: "submit",
+    tx_blob: signedOrder.signedTransaction,
+  });
+  await ledgerAccept(client);
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any -- The return type is legitimately any
@@ -161,17 +170,7 @@ export async function suiteTestSetup(this: any): Promise<void> {
   this.transactions = [];
 
   await setupClient.bind(this)(serverUrl);
-  const client: Client = this.client;
-  await ledgerAccept(client);
   this.newWallet = generateXAddress();
-  // two times to give time to server to send `ledgerClosed` event
-  // so getLedgerVersion will return right value
-  await ledgerAccept(client);
-  const response: LedgerResponse = await client.request({
-    command: "ledger",
-    ledger_index: "validated",
-  });
-  this.startLedgerVersion = response.result.ledger_index;
   await setupAccounts(this);
   return teardownClient.bind(this)();
 }

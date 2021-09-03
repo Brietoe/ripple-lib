@@ -24,7 +24,7 @@ describe("Utility method integration tests", function () {
     const response = (await this.client.request({
       command: "ping",
     })) as PingResponse;
-    const expected = {
+    const expected: PingResponse = {
       id: 0,
       result: { role: "admin", unlimited: true },
       status: "success",
@@ -37,7 +37,7 @@ describe("Utility method integration tests", function () {
     const response = (await this.client.request({
       command: "random",
     })) as RandomResponse;
-    const expected = {
+    const expected: RandomResponse = {
       id: 0,
       result: {
         random: "[random string of 64 bytes]",
