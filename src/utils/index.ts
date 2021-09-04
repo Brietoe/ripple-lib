@@ -1,10 +1,10 @@
-import { xAddressToClassicAddress } from "ripple-address-codec";
+import { xAddressToClassicAddress } from 'ripple-address-codec'
 
-import { ValidationError } from "../common/errors";
-import { RippledAmount } from "../common/types/objects";
+import { ValidationError } from '../common/errors'
+import { RippledAmount } from '../common/types/objects'
 
-import { deriveKeypair, deriveAddress, deriveXAddress } from "./derive";
-import { generateXAddress } from "./generateAddress";
+import { deriveKeypair, deriveAddress, deriveXAddress } from './derive'
+import { generateXAddress } from './generateAddress'
 import {
   computeLedgerHeaderHash,
   computeBinaryTransactionHash,
@@ -19,12 +19,12 @@ import {
   computeLedgerHash,
   computeEscrowHash,
   computePaymentChannelHash,
-} from "./hashes";
-import signPaymentChannelClaim from "./signPaymentChannelClaim";
-import verifyPaymentChannelClaim from "./verifyPaymentChannelClaim";
-import { xrpToDrops, dropsToXrp } from "./xrpConversion";
+} from './hashes'
+import signPaymentChannelClaim from './signPaymentChannelClaim'
+import verifyPaymentChannelClaim from './verifyPaymentChannelClaim'
+import { xrpToDrops, dropsToXrp } from './xrpConversion'
 
-const RIPPLE_EPOCH_DIFF = 0x386d4380;
+const RIPPLE_EPOCH_DIFF = 0x386d4380
 
 /**
  * Check if a secret is valid.
@@ -34,10 +34,10 @@ const RIPPLE_EPOCH_DIFF = 0x386d4380;
  */
 function isValidSecret(secret: string): boolean {
   try {
-    deriveKeypair(secret);
-    return true;
+    deriveKeypair(secret)
+    return true
   } catch (_err) {
-    return false;
+    return false
   }
 }
 
@@ -49,37 +49,37 @@ function isValidSecret(secret: string): boolean {
  * @throws When issuer X-Address includes a tag.
  */
 function toRippledAmount(amount: RippledAmount): RippledAmount {
-  if (typeof amount === "string") {
-    return amount;
+  if (typeof amount === 'string') {
+    return amount
   }
 
-  if (amount.currency === "XRP") {
-    return xrpToDrops(amount.value);
+  if (amount.currency === 'XRP') {
+    return xrpToDrops(amount.value)
   }
-  if (amount.currency === "drops") {
-    return amount.value;
+  if (amount.currency === 'drops') {
+    return amount.value
   }
 
-  let issuer = amount.counterparty ?? amount.issuer;
-  let tag: number | false = false;
+  let issuer = amount.counterparty ?? amount.issuer
+  let tag: number | false = false
 
   try {
     if (issuer) {
-      ({ classicAddress: issuer, tag } = xAddressToClassicAddress(issuer));
+      ;({ classicAddress: issuer, tag } = xAddressToClassicAddress(issuer))
     }
   } catch (_e) {
     /* not an X-address */
   }
 
   if (tag !== false) {
-    throw new ValidationError("Issuer X-address includes a tag");
+    throw new ValidationError('Issuer X-address includes a tag')
   }
 
   return {
     currency: amount.currency,
     issuer,
     value: amount.value,
-  };
+  }
 }
 
 /**
@@ -89,16 +89,16 @@ function toRippledAmount(amount: RippledAmount): RippledAmount {
  * @returns The same object, but without undefined values.
  */
 function removeUndefined<T extends Record<string, unknown>>(obj: T): T {
-  const newObj = { ...obj };
+  const newObj = { ...obj }
 
   Object.entries(obj).forEach(([key, value]) => {
     if (value == null) {
       /* eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- Deletes undefined values. */
-      delete newObj[key];
+      delete newObj[key]
     }
-  });
+  })
 
-  return newObj;
+  return newObj
 }
 
 /**
@@ -108,7 +108,7 @@ function removeUndefined<T extends Record<string, unknown>>(obj: T): T {
  * @returns Milliseconds since unix epoch.
  */
 function rippleToUnixTimestamp(rpepoch: number): number {
-  return (rpepoch + RIPPLE_EPOCH_DIFF) * 1000;
+  return (rpepoch + RIPPLE_EPOCH_DIFF) * 1000
 }
 
 /**
@@ -118,7 +118,7 @@ function rippleToUnixTimestamp(rpepoch: number): number {
  * @returns Seconds since Ripple Epoch (1/1/2000 GMT).
  */
 function unixToRippleTimestamp(timestamp: number): number {
-  return Math.round(timestamp / 1000) - RIPPLE_EPOCH_DIFF;
+  return Math.round(timestamp / 1000) - RIPPLE_EPOCH_DIFF
 }
 
 /**
@@ -128,7 +128,7 @@ function unixToRippleTimestamp(timestamp: number): number {
  * @returns Iso8601 international standard date format.
  */
 function rippleTimeToISOTime(rippleTime: number): string {
-  return new Date(rippleToUnixTimestamp(rippleTime)).toISOString();
+  return new Date(rippleToUnixTimestamp(rippleTime)).toISOString()
 }
 
 /**
@@ -138,7 +138,7 @@ function rippleTimeToISOTime(rippleTime: number): string {
  * @returns Seconds since ripple epoch (1/1/2000 GMT).
  */
 function ISOTimeToRippleTime(iso8601: string): number {
-  return unixToRippleTimestamp(Date.parse(iso8601));
+  return unixToRippleTimestamp(Date.parse(iso8601))
 }
 
 export {
@@ -168,4 +168,4 @@ export {
   deriveXAddress,
   signPaymentChannelClaim,
   verifyPaymentChannelClaim,
-};
+}
